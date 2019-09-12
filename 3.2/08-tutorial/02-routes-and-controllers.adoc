@@ -1,0 +1,70 @@
+---
+permalink: adonis-blog-part2
+categories:
+- 教程
+---
+= 路由和控制器
+
+toc::[]
+
+在link:adonis-blog-part1[上一个教程]我们创建了一个新的应用并注册一些路由去渲染视图而并没有使用控制器。
+
+没有控制器的渲染的视图固然很好，但要创建真正的应用，需要处理一些逻辑并使用动态数据去创建视图。在本教程中，
+我们将学习如何创建控制器并将它们绑定到路由。
+
+== 创建控制器
+这些控制器是放在 `app/Http/Controllers` 文件下的 *ES2015* 的类。 每个文件定义了一个控制器，你可以自由地在一个控制器上创建尽可能多的方法。
+
+让我们快速创建一个新的控制器。因为我们会把这个应用到博客，所以我们创建一个名为 *PostsController* 的控制器。一如既往，我们将利用Ace为我们创建控制器。
+
+[source, bash]
+----
+./ace make:controller Posts
+----
+
+.输出
+[source]
+----
+create: app/Http/Controllers/PostsController.js
+----
+
+我们已创建完了第一个控制器。让我们将此控制器绑定到路由上，并通过控制器渲染这个视图。我们需要将
+`Route.on('/').render('home')` 替换 `Route.get('/', 'PostsController.index')`。
+
+.app/Http/routes.js
+[source, javascript]
+----
+Route.get('/', 'PostsController.index')
+----
+
+.Final Routes File
+[source, javascript]
+----
+const Route = use('Route')
+
+Route.get('/', 'PostsController.index')
+Route.on('about').render('about')
+Route.on('contact').render('contact')
+----
+
+可以参考完整的link:routing[路由]例子。现在，我们将写一些代码到 PostsController 里面去渲染一个视图
+
+.app/Http/Controllers/PostsController.js
+[source, javascript]
+----
+'use strict'
+
+class PostsController {
+
+  * index (request, response) { <1>
+    yield response.sendView('home') <2>
+  }
+
+}
+
+module.exports = PostsController
+----
+
+<1> 我们在这个控制器中创建了一个 `index` 的方法，通过ES2015 generator去实现简单的异步代码
+<2> 接下来我们使用 `sendView` 方法去渲染 *home* 视图
+

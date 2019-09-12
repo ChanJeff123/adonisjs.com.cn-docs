@@ -1,0 +1,567 @@
+---
+permalink: query-builder
+categories:
+- 数据库
+---
+= 查询构建器
+
+toc::[]
+
+AdonisJs查询构建器为您提供统一的语法，以使用JavaScript方法与SQL数据库进行交互。本指南是对查询构建器的所有可用方法的引用。
+
+检出 link:database-setup[数据库设置]指南，以查看*支持的数据库的列表*，*配置选项*和*调试查询*。
+
+== 介绍
+编写SQL查询在很多方面可能会乏味，即使您擅长使用SQL。让我们想象你写的所有查询MySQL，经过一段时间你的经理要求你迁移到PostgreSQL的一切。现在您将不得不重新编写/修改您的MySQL查询，以确保它们能够与PostgreSQL一起使用
+
+另一个问题可能是使用条件块构建增量查询。
+
+.不使用查询生成器
+[source, javascript]
+----
+const sql = 'SELECT * FROM `users`'
+
+if (username) {
+  sql += ' WHERE `username` = ' + username
+}
+----
+
+.使用查询生成器
+[source, javascript]
+----
+const query = Database.table('users')
+
+if (username) {
+  query.where('username', username)
+}
+----
+
+== 基本例子
+我们来看一下使用链接不同方法处理查询生成器的基本示例。
+
+[source, javascript]
+----
+const Database = use('Database')
+
+class UserController {
+
+  * index (request, response) {
+    const john = yield Database
+      .table('users')
+      .where('username', 'john')
+      .limit(1)
+
+    response.json(john)
+  }
+
+}
+----
+
+== 选择
+`select`方法将定义要为给定*SELECT*查询选择的字段。
+
+[source, javascript]
+----
+yield Database.select('id', 'username').from('users')
+// or
+yield Database.select('*').from('users')
+----
+
+.SQL输出
+[source, sql]
+----
+select `id`, `username` from `users`
+select * from `users`
+----
+
+== Where子句
+查询构建器提供了一堆动态方法来添加*where*子句。而且，它通过传递一个`closure`而不是实际的值来支持子查询。
+
+NOTE: 将`undefined`传递给where子句会在SQL编译期间导致错误。确保动态值在传递之前不是'undefined`。
+
+==== where(mixed)
+
+[source, javascript]
+----
+const users = yield Database.from('users').where('id', 1)
+// Or
+const users = yield Database.from('users').where({ id: 1 })
+----
+
+此外，您可以将比较运算符定义为where子句。
+
+[source, javascript]
+----
+const adults = yield Database.from('users').where('age', '>', 18)
+----
+
+您还可以向*where*子句添加回调。回调输出一些不同的SQL查询，并将所有where子句组合在回调内。
+
+.传递闭包
+[source, javascript]
+----
+yield Database.from('users').where(function () {
+  this.where('id', 1)
+})
+----
+
+[source, sql]
+----
+select * from `users` where (`id` = 1)
+----
+
+.SubQueries
+[source, javascript]
+----
+const subquery = Database
+  .from('accounts')
+  .where('account_name', 'somename')
+  .select('account_name')
+
+const users = yield Database
+  .from('users')
+  .whereIn('id', subquery)
+----
+
+[source, sql]
+----
+select * from `users` where `id` in (select `account_name` from `accounts` where `account_name` = 'somename')
+----
+
+==== whereNot(mixed)
+[source, javascript]
+----
+const kids = yield Database.from('users').whereNot('age', '>', 15)
+// or
+const users = yield Database.from('users').whereNot({username: 'foo'})
+----
+
+==== whereIn(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereIn('id', [1,2,3])
+----
+
+==== whereNotIn(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereNotIn('id', [1,2,3])
+----
+
+==== whereNull(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereNull('deleted_at')
+----
+
+==== whereNotNull(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereNotNull('created_at')
+----
+
+==== whereExists(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereExists(function () {
+  this.from('accounts').where('users.id', 'accounts.user_id')
+})
+----
+
+==== whereNotExists(mixed)
+[source, javascript]
+----
+yield Database.from('users').whereNotExists(function () {
+  this.from('accounts').where('users.id', 'accounts.user_id')
+})
+----
+
+==== whereBetween(mixed)
+[source, javascript]
+----
+yield Database.table('users').whereBetween('age',[18,32])
+----
+
+==== whereNotBetween(mixed)
+[source, javascript]
+----
+yield Database.table('users').whereNotBetween('age',[45,60])
+----
+
+==== whereRaw(mixed)
+.where(Database.raw(query))便利的助手类
+
+[source, javascript]
+----
+yield Database.from('users').whereRaw('id = ?', [20])
+----
+
+== 连接
+
+==== innerJoin(column, mixed)
+
+[source, javascript]
+----
+yield Database
+  .table('users')
+  .innerJoin('accounts', 'user.id', 'accounts.user_id')
+----
+
+此外，您可以传递一个闭包来构建连接。
+
+[source, javascript]
+----
+yield Database.table('users').innerJoin('accounts', function () {
+  this
+    .on('users.id', 'accounts.user_id')
+    .orOn('users.id', 'accounts.owner_id')
+})
+----
+
+其他连接方法::
+|====
+| leftJoin
+| leftOuterJoin
+| rightJoin
+| rightOuterJoin
+| outerJoin
+| fullOuterJoin
+| crossJoin
+| joinRaw
+|====
+
+== 排序和限制
+
+==== distinct(...columns)
+[source, javascript]
+----
+yield Database.table('users').distinct('age')
+----
+
+==== groupBy(...columns)
+[source, javascript]
+----
+yield Database.table('users').groupBy('age')
+----
+
+==== groupByRaw(...columns)
+[source, javascript]
+----
+yield Database.table('users').groupByRaw('age, status')
+----
+
+==== orderBy(column, [direction=asc])
+[source, javascript]
+----
+yield Database.table('users').orderBy('id', 'desc')
+----
+
+==== orderByRaw(column, [direction=asc])
+[source, javascript]
+----
+yield Database.table('users').orderBy('col NULLS LAST DESC')
+----
+
+==== having(column, operator, value)
+Note:在使用`having()`方法之前，必须使用`groupBy()`子句。
+
+[source, javascript]
+----
+yield Database.table('users').groupBy('age').having('age', '>', 18)
+----
+
+==== offset/limit(value)
+[source, javascript]
+----
+yield Database.table('users').offset(11).limit(10)
+----
+
+== 插入
+
+插入操作将返回插入行的`id`。在批量插入的情况下，第一条记录的`id`将被返回，它更多的限制了MySQL本身。link:http://dev.mysql.com/doc/refman/5.6/en/information-functions.html#function_last-insert-id[LAST_INSERT_ID].
+
+==== insert(values)
+[source, javascript]
+----
+const userId = yield Database
+  .table('users')
+  .insert({username: 'foo', ...})
+
+// BULK INSERT
+const firstUserId = yield Database
+  .from('users')
+  .insert([{username: 'foo'}, {username: 'bar'}])
+----
+
+==== into(tableName)
+当将数据插入数据库时​​，方法`into`比`table/from`更容易读取。
+
+[source, javascript]
+----
+const userId = yield Database
+  .insert({username: 'foo', ...})
+  .into('users')
+----
+
+=== PostgreSQL Only
+对于PostgreSQL，您必须明确定义返回列。所有其他数据库客户端将忽略此语句。
+
+[source, javascript]
+----
+const userId = yield Database
+  .insert({ username: 'virk' })
+  .into('users')
+  .returning('id')
+----
+
+== 更新
+所有更新操作将返回受影响的行数。
+
+[source, javascript]
+----
+const affectedRows = yield Database
+  .table('users')
+  .where('username', 'tutlage')
+  .update('lastname', 'Virk')
+----
+
+传递多个列的对象。
+
+[source, javascript]
+----
+const affectedRows = yield Database
+  .table('users')
+  .where('username', 'tutlage')
+  .update({ lastname: 'Virk', firstname: 'Aman' })
+----
+
+== 删除
+删除操作也会返回受影响的行数。
+
+==== delete
+此外，您可以使用`del()`，因为`delete`是Javascript中的保留关键字。
+
+
+[source, javascript]
+----
+const affectedRows = yield Database
+  .table('users')
+  .where('username', 'tutlage')
+  .delete()
+----
+
+==== truncate
+Truncate将从数据库中删除所有行，并将自动递增ID设置为*0*。
+
+[source, javascript]
+----
+yield Database.truncate('users')
+----
+
+== Pagination
+查询构建器提供了一些方便的方法来分页数据库中的结果。
+
+==== forPage(page, [limit=20])
+[source, javascript]
+----
+const users = yield Database
+  .from('users')
+  .forPage(1, 10)
+----
+
+==== paginate(page, [limit=20])
+[source, javascript]
+----
+const results = yield Database
+  .from('users')
+  .paginate(2, 10)
+----
+
+NOTE: `paginate`方法的输出与`forPage`方法不同。
+
+
+.输出
+[source, javascript]
+----
+{
+  total: 0,
+  currentPage: 2,
+  perPage: 10,
+  lastPage: 0,
+  data: [{...}]
+}
+----
+
+== 数据库事务
+数据库事务是安全操作，除非您明确提交更改，否则数据库事务不会反映在数据库中。
+
+==== beginTransaction
+`beginTransaction`方法将返回事务对象，可用于执行任何查询。
+
+[source, javascript]
+----
+const trx = yield Database.beginTransaction()
+yield trx.insert({username: 'virk'}).into('users')
+
+trx.commit() // insert query will take place on commit
+trx.rollback() // will not insert anything
+----
+
+==== transaction
+另外，你可以将你的交易包装在*callback*中。主要的区别是，如果您的任何查询引发错误，您将不必手动调用`commit或`rollback'，事务将自动回滚。否则，它将提交。
+
+[source, javascript]
+----
+yield Database.transaction(function * (trx) {
+  yield trx.insert({username: 'virk'}).into('users')
+})
+----
+
+== Chunks
+`chunk`方法将以块的方式拉出记录，并执行关闭，直到有结果。当您计划选择数千条记录时，此方法很有用。
+
+[source, javascript]
+----
+yield Database.from('logs').chunk(200, function (logs) {
+  console.log(logs)
+})
+----
+
+== 聚合函数
+
+==== count([column])
+[source, javascript]
+----
+const total = yield Database.from('users').count()
+
+// COUNT A COLUMN
+const total = yield Database.from('users').count('id')
+
+// COUNT COLUMN AS NAME
+const total = yield Database.from('users').count('id as id')
+----
+
+==== countDistinct
+`countDistinct`与count相同，但增加了不同的表达。
+
+[source, javascript]
+----
+const total = yield Database.from('users').countDistinct('id')
+----
+
+==== min(column)
+
+[source, javascript]
+----
+yield Database.from('users').min('age')
+yield Database.from('users').min('age as a')
+----
+
+==== max(column)
+
+[source, javascript]
+----
+yield Database.from('users').max('age')
+yield Database.from('users').max('age as a')
+----
+
+==== sum(column)
+[source, javascript]
+----
+yield Database.from('cart').sum('total')
+yield Database.from('cart').sum('total as t')
+----
+
+==== sumDistinct(column)
+[source, javascript]
+----
+yield Database.from('cart').sumDistinct('total')
+yield Database.from('cart').sumDistinct('total as t')
+----
+
+==== avg(column)
+[source, javascript]
+----
+yield Database.from('users').avg('age')
+yield Database.from('users').avg('age as age')
+----
+
+==== avgDistinct(column)
+[source, javascript]
+----
+yield Database.from('users').avgDistinct('age')
+yield Database.from('users').avgDistinct('age as age')
+----
+
+==== increment(column, amount)
+将列现有值增加*1*。
+
+[source, javascript]
+----
+yield Database
+  .table('credits')
+  .where('id', 1)
+  .increment('balance', 10)
+----
+
+==== decrement(column, amount)
+Opposite of `increment`.
+
+[source, javascript]
+----
+yield Database
+  .table('credits')
+  .where('id', 1)
+  .decrement('balance', 10)
+----
+
+== Helpers
+
+==== pluck(column)
+`pluck`方法将返回所选列的值的数组。
+[source, javascript]
+----
+const usersIds = yield Database.from('users').pluck('id')
+----
+
+==== pluckAll(...columns)
+`pluckAll`方法返回一个对象数组。
+
+NOTE: `pluckAll` has been added as of `adonis-lucid@3.0.12`
+
+[source, javascript]
+----
+const usersIds = yield Database.from('users').pluckAll('id')
+// or
+const users = yield Database.from('users').pluckAll('id', 'username')
+----
+
+==== first
+`first`方法将向查询添加一个*limit 1*子句。
+
+[source, javascript]
+----
+yield Database.from('users').first()
+----
+
+==== clone
+克隆当前的查询链以实现可重用性。
+
+[source, javascript]
+----
+const query = Database
+  .from('users')
+  .where('username', 'virk')
+  .clone()
+
+// later
+yield query
+----
+
+==== columnInfo([columnName])
+返回给定列的信息。
+
+[source, javascript]
+----
+const username = yield Database.table('users').columnInfo('username')
+----

@@ -1,0 +1,89 @@
+---
+permalink: csrf-protection
+categories:
+- 安全
+---
+= CSRF保护
+
+toc::[]
+
+跨站点请求伪造（CSRF）允许攻击者在没有他们的标识或许可的情况下代表另一个用户执行操作。
+
+AdonisJs通过拒绝不明身份的请求来保护您的应用免受CSRF攻击。检查具有*POST*, *PUT*和*DELETE*方法的HTTP请求，以确保正确的人从正确的位置调用这些请求。您可以了解有关CSRF链接的更多信息：https：//www.owasp.org/index.php/Cross-Site_Request_Forgery [点击这里, window="_blank"]
+
+== 工作原理
+
+1. AdonisJs将为访问您的网站的每个用户创建一个*CSRF会话*。
+2. 接下来，为以前创建的会话生成*CSRF令牌*。出于安全考虑，令牌将在每次刷新页面时重新生成。
++
+生成的令牌可以在视图内访问为`csrfToken`或`csrfField`，这样您可以在提交HTML表单时传递此令牌。
+3. 此外，同样的标记设置为带有`XSRF-TOKEN`键的cookie。像*AngularJs*这样的Frontend框架会自动读取这个cookie，并将其与每个Ajax请求一起发送。
+4. 最后，当*POST*, *PUT*和*DELETE*请求到来时，中间件将使用秘密验证令牌，以确保其有效。它将尝试从以下来源访问令牌。
+  * `_csrf`字段在请求体上。
+  * 还将尝试访问 *csrf-token*, *x-csrf-token*和*x-xsrf-token*标头。
+
+
+
+== 配置
+CSRF的配置保存在`config/shield.js`文件中。
+
+[source, javascript]
+----
+csrf: {
+  enable: true,
+  methods: ['POST', 'PUT', 'DELETE'],
+  filterUris: ['/user/:id']
+}
+----
+
+[options="header"]
+|====
+| 键 | 值 | 描述
+| enable  | Boolean | 一个布尔值，用于打开/关闭整个应用程序的CSRF。
+| methods | Array | HTTP动词被CSRF保护。考虑添加允许最终用户添加或修改数据的所有动词。
+| filterUris | Array | URL URLs/Routes的路由。您可以传递实际路由定义或正则表达式进行匹配。
+|====
+
+== 访问CSRF令牌
+要发送令牌以及每个请求，您需要访问它。有几种方法可以访问CSRF令牌。
+
+==== csrfField
+[source, twig]
+----
+{{ csrfField }}
+----
+
+.输出
+[source, html]
+----
+<input type="hidden" name="_csrf" value="xxxxxx">
+----
+
+==== csrfToken
+[source, twig]
+----
+{{ csrfToken }}
+----
+
+您还可以访问控制器内的令牌，并按如下所示路由操作。
+
+[source, javascript]
+----
+request.csrfToken()
+----
+
+== 处理CSRF错误
+在验证失败时，抛出一个名为*EBADCSRFTOKEN* 的命名异常，并且可以在`app/Listeners/Http.js`文件中处理相同的异常。
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.handleError = function * (error, request, response) {
+  if (error.code === 'EBADCSRFTOKEN') {
+    response.forbidden('You cannot access this resource.')
+    return
+  }
+
+  // ...
+}
+----

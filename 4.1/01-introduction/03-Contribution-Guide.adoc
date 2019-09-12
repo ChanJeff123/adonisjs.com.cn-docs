@@ -1,0 +1,61 @@
+---
+title: 贡献指南
+category: 介绍
+permalink: contribution-guide
+---
+
+= 贡献指南
+
+toc::[]
+
+开源项目由 **活跃的社区** 中的用户和协作者来维护和支持。
+
+我们鼓励你通过贡献源代码、改进文档、报告潜在的bug或者测试新特性，来积极的参与到AdonisJs的开发和未来。 
+
+== 渠道
+
+与 AdonisJs 团队沟通的方式有很多。
+
+1. link:https://github.com/adonisjs[Github 仓库, window="_blank"]: 共享 bug 或专门针对 AdonisJs 创建功能请求。
+2. link:https://forum.adonisjs.com[论坛, window="_blank"]: 提出问题，展示你的项目，并参与 AdonisJs 框架的日常开发。
+3. link:https://discord.gg/vDcEjq6[Discord, window="_blank"]: 加入我们的 Discord 服务器，即可与社区中的其他人即时聊天。
+4. link:https://twitter.com/adonisframework[Twitter, window="_blank"]: 随时关注我们每天取得的最新进展，了解社区提供的优质项目。
+
+== 错误报告
+
+乍一看，提供一个好的bug似乎很简单。
+
+但是你要尽量描述清楚，并提供足够的上下文和信息来重现问题。
+
+bug报告也可以以包含失败测试的 pull request 的形式发送。
+
+1. 提供明确的问题标题和描述。
+2. 提供你所使用的框架版本。
+3. 添加尽可能多的示例代码来演示这个问题，你还可以提供一个完整的代码仓库来快速重现问题。
+
+记住，bug报告并不意味着bug将在一个小时内得到修复！
+
+在报告问题之前尝试自己动手解决，可以帮到你自己和广大的社区。
+
+== 编码风格
+
+很不幸，JavaScript 没有任何官方的编码风格。
+
+因此， AdonisJs 使用 link:https://standardjs.com/[StandardJS, window="_blank"] 来帮助维护代码的可读性和一致性。
+
+在向任何 AdonisJs 仓库 pull requests 之前，请确保你的代码进行了 lint 处理：
+
+[source, shell]
+----
+> npm run lint
+----
+
+== 文档
+
+当向框架的核心添加新特性时，请务必在 link:https://github.com/adonisjs/docs[文档仓库] 中创建一个并行的 pull request 并将其链接起来。
+
+这有助于 AdonisJs 团队了解你的特性，并保持文档的更新。
+
+== 测试
+
+在发送 pull request 之前，请务必测试你添加的特性，或者创建一个回归测试来演示一段代码在特定情况下是如何失败的，同时提供一个bug修复。

@@ -1,0 +1,99 @@
+---
+permalink: dev-domains
+title: 使用 .dev 域名
+category: recipes
+---
+= 使用 .dev 域名
+
+toc::[]
+
+我们在开发应用程序时都喜欢使用漂亮的开发域名，例如 `.dev`。在本文中，我们将学习如何将自定义域绑定到应用程序，而不是通过 `localhost` 访问它们。
+
+NOTE: 该技术没有技术优劣之说，只是一种对漂亮域名的个人偏好而已。
+
+
+== 安装 hotel
+第一步是设置一个名为 link:https://www.npmjs.com/package/hotel[hotel, window="_blank"] 的外部工具，它允许你为一个应用程序或 URL 注册域名。
+
+[source, bash]
+----
+npm install -g hotel
+----
+
+紧接着，我们需要在 `port=2000` 上将其作为守护进程启动。
+
+[source, bash]
+----
+hotel start
+----
+
+运行后，你可以通过运行 `hotel ls` 命令来查看已注册的应用或域名，新安装时为空。
+
+== 设置代理
+让我们从理论上理解它是如何工作的。我们需要告诉我们的 *浏览器* 或 *系统网络* 通过一个代理服务于 `.dev` 应用程序，将请求传递给实际的URL。
+
+整个代理过程非常轻量级，不会影响系统性能或速度。
+
+现在我们知道，所有的神奇操作都是通过代理完成的，接着让我们更新浏览器/系统设置，以便通过 link:https://github.com/typicode/hotel/blob/master/docs/README.md#browser-configuration[hotel proxy, window="_blank"] 代理传递。
+
+=== 系统配置
+我们需要将网络指向 link:http://localhost:2000/proxy.pac[http://localhost:2000/proxy.pac] 文件。
+
+==== Osx
+
+[source, bash]
+----
+Network Preferences > Advanced > Proxies > Automatic Proxy Configuration
+----
+
+
+==== Windows
+
+[source, bash]
+----
+Settings > Network and Internet > Proxy > Use setup script
+----
+
+
+==== Linux ( ubuntu )
+[source, bash]
+----
+System Settings > Network > Network Proxy > Automatic
+----
+
+=== 浏览器配置
+浏览器配置仅代理该浏览器的请求，而非整个系统。
+
+==== Chrome ( exit chrome first )
+[source, bash]
+----
+# Linux
+google-chrome --proxy-pac-url=http://localhost:2000/proxy.pac
+
+# OS X
+open -a "Google Chrome" --args --proxy-pac-url=http://localhost:2000/proxy.pac
+----
+
+==== Firefox
+[source, bash]
+----
+Preferences > Advanced > Network > Connection > Settings > Automatic proxy URL configuration
+----
+
+== 与 AdonisJs 集成
+现在 hotel 已经配置好，我们可以独立于 AdonisJs 在任何应用程序中使用它。但问题是，所有注册到 `hotel` 上的应用程序都会被永久映射，除非你手动删除它们。
+
+此行为也可能引发问题，例如你希望 *一次性域名* 在程序运行之前一直存在。
+
+Adonis cli 的 `adonis serve` 命令接收一个标记，该标记使用 *hotel* 注册一个一次性域名，并在应用停止时将其删除。
+
+[source, bash]
+----
+adonis serve --domain=yardstick@http://localhost:3333
+----
+
+在这种情况下，`--domain` 标记采用 *域名* 和 *URL*。
+
+- `domain=yardstick`
+- `url=http://localhost:3333`
+

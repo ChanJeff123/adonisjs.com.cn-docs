@@ -1,0 +1,31 @@
+---
+permalink: why-adonis-install
+title: 为什么要安装 Adonis?
+category: recipes
+---
+= 为什么要安装 Adonis?
+
+toc::[]
+
+AdonisJs 附带了一个名为 `adonis install <package>` 的命令，与 `npm install` 或 `yarn add` 类似。
+
+事实上，`adonis install` 幕后就是使用 npm 或 yarn 来安装包，但在安装后还会执行而外的步骤。
+
+== 命令执行流程
+
+link:http://res.cloudinary.com/adonisjs/image/upload/q_100/v1509020167/adonis-install-flow.png[image:http://res.cloudinary.com/adonisjs/image/upload/q_100/v1509020167/adonis-install-flow.png[width="400px"]]
+
+每个提供者都可以有两个文件 link:https://github.com/adonisjs/adonis-lucid/blob/develop/instructions.js[instructions.js, window="_blank"] 和 link:https://github.com/adonisjs/adonis-lucid/blob/develop/instructions.md[instructions.md, window="_blank"]，由 adonis 用于执行 `post install` 步骤。
+
+
+=== instructions.js
+该 `.js` 文件导出一个函数。该函数可用于执行任何步骤，因为你可以在其中编写功能代码。
+
+最常执行的步骤是:
+
+[ul-shrinked]
+- 复制配置文件。
+- 创建控制器、模型等实体。
+
+=== instructions.md
+该 `.md` 文件是由提供者的用户手动执行的一组小指令，因此可以在这里用 markdown 写一些 Github风格的使用说明。

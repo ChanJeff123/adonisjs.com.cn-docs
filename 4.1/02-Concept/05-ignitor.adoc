@@ -1,0 +1,119 @@
+---
+permalink: ignitor
+title: 启动装置
+category: 核心概念
+---
+
+= 启动装置
+
+toc::[]
+
+link:https://github.com/adonisjs/adonis-ignitor[Ignitor, window="_blank"] 为 AdonisJs 应用程序的启动引导过程提供动力。
+
+在本指南中，我们将了解 Ignitor 包为管理我们的代码而提供的一些特性和功能。
+
+== Hooks (钩子)
+Ignitor 暴露了许多钩子来制定你的应用程序行为。
+
+这些钩子在 `start/hooks.js` 文件中注册，如果该文件不存在，请随意创建它。
+
+这是一个如何使用 `hooks.after` 在所有 providers 启动后注册视图全局的示例：
+
+.start/hooks.js
+[source, js]
+----
+const { hooks } = require('@adonisjs/ignitor')
+
+hooks.after.providersBooted(() => {
+  const View = use('View')
+  View.global('time', () => new Date().getTime())
+})
+----
+
+与 `hooks.after` 类似，你还可以使用 `hooks.before` 在钩子发生 **之前** 注册应用程序逻辑。
+
+以下是可用的 hooks 列表:
+
+[options="header", cols="10%, 90%"]
+|====
+| Hook Event | Description
+| providersRegistered | Before/after all providers have registered
+| providersBooted | Before/after all providers have booted
+| preloading | Before/after preloading registered files
+| httpServer | Before/after HTTP server has started
+| aceCommand | Before/after ace command is executed
+|====
+
+== 预加载文件
+Ignitor 可以在 HTTP 服务器启动后轻松的预加载文件。
+
+为此，请修改 `server.js` 文件并添加 `preLoad` 方法：
+
+[source, js]
+----
+new Ignitor(require('@adonisjs/fold'))
+  .appRoot(__dirname)
+  .preLoad('start/fire-zombies')
+  .fireHttpServer()
+  .catch(console.error)
+----
+
+NOTE: `preLoad` 方法接收相对的用程序根路径，或任意 JavaScript 文件的绝对路径。
+
+要加载多个文件，请多次调用 `preLoad` 方法：
+
+[source, js]
+----
+new Ignitor(require('@adonisjs/fold'))
+  .preLoad('')
+  .preLoad('')
+  // etc
+----
+
+== Ignitor 方法
+以下是 `ignitor` 实例上可用的方法列表。
+
+==== appRoot(location)
+定义应用程序根目录的绝对路径：
+
+[source, js]
+----
+ignitor
+  .appRoot(__dirname)
+----
+
+==== modulesRoot(location)
+定义应用程序 `node_modules` 父级目录的绝对路径。
+
+默认情况下，使用 `appRoot()` 中设置的路径：
+
+[source, js]
+----
+ignitor
+  .modulesRoot(path.join(__dirname, '..'))
+----
+
+==== appFile(location)
+定义应用程序文件的相对路径。
+
+默认情况下，使用 `start/app.js` 文件：
+
+[source, js]
+----
+ignitor
+  .appFile('start/app.js')
+----
+
+==== loadCommands()
+指示 Ignitor 加载 ace providers 和 commands.
+
+这是在运行 ace 命令时完成的，但是，你也可以在启动 HTTP 服务器时加载命令：
+
+[source, js]
+----
+ignitor
+  .loadCommands()
+----
+
+
+

@@ -1,0 +1,157 @@
+---
+title: 特性
+permalink: traits
+category: lucid
+---
+= Traits
+
+toc::[]
+
+Traits make it possible to add functionality to your Models from *outside-in*. Think of them as building blocks for your models.
+
+Using traits, you can
+
+[ol-shrinked]
+1. Add new methods to your model class.
+2. Listen for model hooks.
+3. Add methods to query builder instance for a given model.
+
+== Creating a Trait
+Create a new file inside `app/Models/Traits` directory or use the following ace command to do it for you.
+
+[source, bash]
+----
+adonis make:trait Slugify
+----
+
+You will find your new trait in `app/Models/Traits/Slugify.js`.
+
+== Manually Creating a Trait
+Traits are saved inside `app/Models/Traits`. Each trait must have a `register` method which receives the model class and an `options` object as its parameters.
+
+.app/Models/Traits/Slugify.js
+[source, js]
+----
+class Slugify {
+
+  register (Model, options) {
+  }
+}
+
+module.exports = Slugify
+----
+
+== Registering a Trait
+Register your trait with a Lucid model as follows:
+
+[source, js]
+----
+const Model = use('Model')
+
+class User extends Model {
+  static boot () {
+    super.boot()
+    this.addTrait('Slugify')
+  }
+}
+----
+
+== Registering a Trait with Options
+Sometimes, it may be useful to pass initialization options to your trait. The options you supply will be passed
+directly to the `register()` method. If you do not supply options, and empty `options = {}` will be passed
+for you.
+
+[source, js]
+----
+const Model = use('Model')
+
+class User extends Model {
+  static boot () {
+    super.boot()
+    this.addTrait('Slugify', {useCamelCase: true})
+  }
+}
+----
+
+If you supply options, it is strongly recommended that you also supply default options in your trait:
+
+.app/Models/Traits/Slugify.js
+[source, js]
+----
+const _ = require('lodash')
+
+class Slugify {
+
+  register (Model, customOptions) {
+    const defaultOptions = {useCamelCase: false}
+    const options = _.extend({}, defaultOptions, customOptions)
+  }
+}
+
+module.exports = Slugify
+----
+
+== Extending a Model's Methods
+
+[source, js]
+----
+class Slugify {
+
+  register (Model, options) {
+    // Add an instance method
+    Model.prototype.printUsername = function () {
+      console.log(this.username)
+    }
+
+    // Add a static method
+    Model.newAdminUser = function () {
+      let m = new Model()
+      m.isAdmin = true
+      return m
+    }
+  }
+}
+
+module.exports = Slugify
+----
+
+== Using Model Hooks
+
+[source, js]
+----
+class Slugify {
+
+  register (Model, options) {
+    Model.addHook('beforeCreate', function (modelInstance) {
+      // create slug
+    })
+  }
+}
+
+module.exports = Slugify
+----
+
+== Extending QueryBuilder
+Also, you can add macros to the `QueryBuilder` for a given model.
+
+[source, js]
+----
+class Slugify {
+
+  register (Model, options) {
+    Model.queryMacro('whereSlug', function (value) {
+      this.where('slug', value)
+      return this
+    })
+  }
+}
+
+module.exports = Slugify
+----
+
+Then use it as:
+
+[source, js]
+----
+await User.query().whereSlug('some value')
+----

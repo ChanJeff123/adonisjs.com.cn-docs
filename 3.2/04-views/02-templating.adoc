@@ -1,0 +1,654 @@
+---
+permalink: templating
+categories:
+- 视图
+---
+= Nunjucks 模板
+
+toc::[]
+
+在AdonisJs中使用 link:http://mozilla.github.io/nunjucks/[Nunjucks] 是非常简单的一件事。
+涵盖了您在视图中所需的 *tags*, *filters* 和 *methods* 等几个方面。阅读 link:views[视图教程] 
+了解AdonisJs的工作原理。 
+
+== 标签
+标签是在视图中定义逻辑操作的块。 以下是一些可用标签及其用法的列表。
+
+=== if
+[source, twig]
+----
+{% if username %}
+  {{username}}
+{% endif %}
+----
+
+[source, twig]
+----
+{% if not currentUser %}
+  <p> You're not logged in! </p>
+{% endif %}
+----
+
+您还可以通过 `==` 进行比较。
+
+[source, twig]
+----
+{% if age == 18 %}
+  You are allowed to join
+{% endif %}
+----
+
+==== else, elif
+
+[source, twig]
+----
+{% if hungry %}
+  I am hungry
+{% elif tired %}
+  I am tired
+{% else %}
+  I am good!
+{% endif %}
+----
+
+==== If
+
+[source, twig]
+----
+{{ 'Party' if weekend else 'Do some work' }}
+----
+
+==== for/asyncEach
+`for`循环遍历数组和对象。
+
+.Array
+[source, twig]
+----
+{% for item in items %}
+  {{ item.text }}
+{% endfor %}
+----
+
+.对象
+[source, twig]
+----
+{#
+  var scores = {
+    Maths: 88,
+    English: 92,
+    Science: 94
+  }
+#}
+
+{% for subject, score in scores %}
+    You scored {{ score }} in {{ subject }}
+{% endfor %}
+----
+
+=== asyncAll
+`asyncAll` 标签将并行运行一个异步循环。 当您在循环中执行异步操作时，这是非常有用的。
+
+NOTE: 以下是在循环中获取用户配置文件的示例，这将导致多个数据库查询。 建议使用 Lucid 中 *eagerLoad* 关系。
+
+[source, twig]
+----
+<ul>
+{% asyncAll user in users.toJSON() %}
+  <li>{{ user.id | fetchProfile }}</li>
+{% endall %}
+</ul>
+----
+
+==== set
+`set` 在您的视图中创建一个临时变量。 将其视为JavaScript中的 `var` 。
+
+[source, twig]
+----
+{% set username = "John" %}
+{{ username }}
+----
+
+此外，您可以一次定义多个键及其值。
+
+[source, twig]
+----
+{% set x, y, z = 5 %}
+----
+
+==== yield
+在你的页面中执行 *ES2015 Generator* 或者 一个 *Promise*
+
+[source, twig]
+----
+{% yield users = User.all() %}
+{{ users | json }}
+----
+
+==== raw
+当构建一些前端网页时，您可能会使用  *VueJs* ，*AngularJs* 或任何类似的框架。 要阻止您的视图解析您的前端模板，您应该使用 `raw` 标签。
+
+[source, twig]
+----
+{% raw %}
+  <p>{{ message }}</p>
+  <input v-model="message">
+{% endraw %}
+----
+
+==== filter
+您可以使用过滤器作为标签，代替使用 *pipe (|)。
+
+[source, twig]
+----
+{% filter title %}
+  may the force be with you
+{% endfilter %}
+----
+
+.输出
+
+[source, html]
+----
+May The Force Be With You
+----
+
+==== call/caller
+一个 `call` 使它更容易传递大量的标记到你的宏。宏可以将传入的内容作为 `caller` 访问。
+
+.resources/views/macros/modal.nunjucks
+[source, twig]
+----
+{% macro modal(effect='fade') %}
+  <div class="modal {{ effect }}">
+    <div class="modal-dialog">
+    {{ caller() }}
+    </div>
+  </div>
+{% endmacro %}
+----
+
+现在让我们使用 *modal* 宏。
+
+.resources/views/home.nunjucks
+[source, twig]
+----
+{% from 'macros.modal' import modal %}
+
+{% call modal() %}
+  <div class="modal-header"></div>
+  <div class="modal-body"></div>
+  <div class="modal-footer"></div>
+{% endcall %}
+----
+
+.输出
+[source, html]
+----
+<div class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-header"></div>
+    <div class="modal-body"></div>
+    <div class="modal-footer"></div>
+  </div>
+</div>
+----
+
+== Comments 注释
+[source, twig]
+----
+{# This is a comment #}
+----
+
+== 标签留白控制
+模板引擎将保留渲染标签之间的所有空白。如果要删除标签的开始和结束之间的所有空白，请使用以下方法。
+
+[source, twig]
+----
+{% for i in [1,2,3,4,5] -%}
+  {{ i }}
+{%- endfor %}
+----
+
+`-` 符号定义空白控制方向。 将其放在 *左边* 将从左边修剪空格，将其设置为 *右边* 将从右边修剪空格。
+
+== Expressions 表达式
+支持所有给定的表达式。
+
+Strings::
+[source]
+----
+"How are you?", 'How are you?'
+----
+
+Numbers::
+[source]
+----
+40, 30.123
+----
+
+Arrays::
+[source]
+----
+[1, 2, "array"]
+----
+
+Objects::
+[source]
+----
+{username: 'John', age: 28}
+----
+
+Boolean::
+[source]
+----
+true, false
+----
+
+== 数字运算符
+以下是支持的数学运算符的列表。
+
+* 加法: `+`
+* 减法: `-`
+* 除法: `/`
+* 除法并取整: `//`
+* 取余: `%`
+* 乘法: `*`
+* 幂: `**`
+
+.使用
+[source, twig]
+----
+{{ 10 + 2 }} {# 12 #}
+{{ 10 / 2 }} {# 5 #}
+{{ 10 % 2 }} {# 0 #}
+----
+
+== 比较运算符
+以下是支持的比较运算符的列表。
+
+- 相等 `==`
+- 不等 `!=`
+- 大于 `>`
+- 大于等于 `>=`
+- 小于 `<`
+- 小于等于 `<=`
+
+.使用
+[source, twig]
+----
+{% if numUsers < 5 %}...{% endif %}
+{% if i == 0 %}...{% endif %}
+----
+
+== 逻辑运算符
+以下是支持的逻辑运算符的列表。
+
+==== and
+[source, twig]
+----
+{% if isLimit and count > limit %}
+  You have crossed the limit of {{ limit }} users.
+{% endif %}
+----
+
+==== or
+[source, twig]
+----
+{% if isAdmin or hasPermission %}
+  Welcome!
+{% endif %}
+----
+
+==== not
+[source, twig]
+----
+{% if not isAdmin %}
+  You are not allowed to access this record.
+{% endif %}
+----
+
+提示：使用 *括号* 以组合表达式。 `if（x <5或y <5）和foo`
+
+== 自动转义
+所有值都会在视图内自动转义，以防止HTML注入和XSS攻击。 但是，您的应用程序可能需要在视图中注入HTML片段，在这种情况下，您应该使用 `安全` 过滤器。
+
+.没有使用过滤器
+[source, twig]
+----
+{% set title = '<h1> Title </h1>' %}
+{{ title }}
+
+{# output &lt;h1&gt; Title &lt;/h1&gt; #}
+----
+
+.使用过滤器
+[source, twig]
+----
+{% set title = '<h1> Title </h1>' %}
+{{ title | safe }}
+
+{# output <h1> Title </h1> #}
+----
+
+== 全局
+我们在这里谈论预定义一些全局变量到框架中。查看 link:views#_working_with_globals[使用全局变量]了解全局定义的自定义视图的全局变量。
+
+==== linkTo(route, text, data, target)
+返回到给定注册路由的链接
+
+.路由
+[source, javascript]
+----
+Route
+    .get('/users', 'UserController.index')
+    .as('listUsers')
+----
+
+.视图
+[source, twig]
+----
+{{ linkTo('listUsers', 'View All Users') }}
+{{ linkTo('listUsers', 'View All Users', {}, '_blank') }}
+----
+
+.输出
+[source, html]
+----
+<a href="/users"> View Profile </a>
+<a href="/users" target="_blank"> View Profile </a>
+----
+
+==== linkToAction(controllerAction, text, data, target)
+返回到已注册控制器相应的路由地址。
+
+[source, twig]
+----
+{{ linkToAction('UserController.index', 'View All Users') }}
+{{ linkToAction('UserController.index', 'View All Users', {}, '_blank') }}
+----
+
+.输出
+[source, html]
+----
+<a href="/users"> View Profile </a>
+<a href="/users" target="_blank"> View Profile </a>
+----
+
+==== range(start, stop, [step=1])
+循环值范围。把它当作 `for`。
+
+[source, twig]
+----
+{% for i in range(0, 5) -%}
+  {{ i }},
+{%- endfor %}
+----
+
+.输出
+[source]
+----
+0,1,2,3,4
+----
+
+== filters 过滤器
+下面是所有可用过滤器的列表。查看 link:views#_working_with_filters[过滤器]
+了解过滤器。
+
+==== age
+[source, twig]
+----
+{{ age | abs }}
+----
+
+==== action 
+返回已注册控制器路由地址。
+
+.路由
+[source, javascript]
+----
+Route.put('/user/:id', 'UserController.update')
+----
+
+.视图
+[source, twig]
+----
+<form method="POST" action="{{ 'UserController.update' | action({id: 1}) }}">
+</form>
+----
+
+.输出
+[source, html]
+----
+<form method="POST" action="/user/1"></form>
+----
+
+==== batch 批处理
+创建数组的多个块。在打印html网格时很有帮助。
+
+[source, twig]
+----
+{% for rows in users | batch(3) %}
+  <div class='row'>
+    {% for user in rows %}
+      <div class='col-md-4'></div>
+    {% endfor %}
+  </div>
+{% endfor %}
+----
+
+==== capitalize 大写
+[source, twig]
+----
+{{ name | capitalize }}
+----
+
+==== default 默认值
+[source, twig]
+----
+{{ title | default('Adonis') }}
+----
+
+==== first
+从数组返回第一项。
+
+[source, twig]
+----
+{{ ['foo','bar'] | first }}
+----
+
+==== groupby 分组
+[source, twig]
+----
+{% set users = [{username:'doe', age:22}, {username:'dim', age:22}, {username:'dock', age:21}] %}
+{{ users | groupby('age') | json }}
+----
+
+==== indent(width=2, firstLine=false) 缩进
+用给定空格缩进字符串的每一行。
+
+[source, twig]
+----
+{{ text | indent(2, true) }}
+----
+
+==== join
+[source, twig]
+----
+{{ ['hello', 'world'] | join(' ') }}
+----
+
+==== json(indentation=2)
+[source, twig]
+----
+{{ users | json }}
+{{ users | json(4) }}
+----
+
+==== last
+从数组返回最后一个项。
+
+[source, twig]
+----
+{{ ['foo','bar'] | last }}
+----
+
+==== length
+Returns length of the array.
+
+[source, twig]
+----
+{{ ['foo','bar'] | length }}
+----
+
+==== list
+将数组转换为列表，将其视为 `join` 的替换，但它也与数组中的字符串一起工作。
+
+[source, twig]
+----
+{{ ['foo','bar'] | list }}
+----
+
+==== lower 小写
+将值转换为小写
+
+[source, twig]
+----
+{{ "Hello World" | lower }}
+{# hello world #}
+----
+
+==== random
+从数组中返回随机项
+
+[source, twig]
+----
+{{ ['foo', 'bar', 'baz'] | random }}
+----
+
+==== rejectattr 刷选属性
+筛选数组移除包含指定属性的对象
+
+[source, twig]
+----
+{% set users = [{username: 'doe', admin: false}, {username: 'doe', admin: true}] %}
+{{ users | rejectattr('admin') | json }}
+----
+
+==== replace 替换
+JavaScript原生 `replace` 方法实现中，第一个参数是一个正则表达式。
+
+[source, twig]
+----
+{{ 'Hello World' | replace('World', 'Everyone') }}
+{# Hello Everyone #}
+----
+
+==== reverse 反转
+[source, twig]
+----
+{{ 'Hello World' | reverse }}
+----
+
+==== round 
+将小数转化成指定的精度
+
+[source, twig]
+----
+{{ 42.55 | round }}
+{# 43.0 #}
+
+{{ 42.55 | round(1, 'floor') }}
+{# 42.5 #}
+----
+
+==== route 
+绑定路由
+
+.路由
+[source, javascript]
+----
+Route
+    .put('/profile/:id', 'ProfileController.update')
+    .as('updateProfile')
+----
+
+[source, twig]
+----
+<form method="POST" action="{{ 'updateProfile' | route({id: 1}) }}">
+</form>
+----
+
+==== striptags
+从一个字符串剔除带有 *Html* , *XML* 标签
+
+[source, twig]
+----
+{{ '<h2> Hello World </h2>' | striptags }}
+{# Hello World #}
+----
+
+==== title
+[source, twig]
+----
+{{ "hello world" | title }}
+{# Hello World #}
+----
+
+==== trim
+去首尾空格
+
+[source, twig]
+----
+{{ " Hello World " | trim }}
+{# Hello World #}
+----
+
+==== truncate
+截取指定长度的字符
+
+[source, twig]
+----
+{{ "Grumpy wizards make toxic brew for the evil Queen and Jack." | truncate(30) }}
+{# Grumpy wizards make toxic brew... #}
+----
+
+==== upper
+转化大写
+
+[source, twig]
+----
+{{ 'hello world' | upper }}
+----
+
+==== urlencode
+让url更加友好（使用UTF-8编码）
+
+
+[source, twig]
+----
+{{ 'http://foo.com?bar=baz' | urlencode }}
+----
+
+==== wordcount
+字数统计
+
+[source, twig]
+----
+{{ 'Grumpy wizards make toxic brew' | wordcount }}
+----
+
+==== float
+将值转成浮点型
+
+[source, twig]
+----
+{{ '1.2' | float }}
+----
+
+==== int
+将值转成整型
+
+[source, twig]
+----
+{{ '1.2' | int }}
+----

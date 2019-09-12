@@ -1,0 +1,343 @@
+---
+permalink: redis
+categories:
+- web 开发工具类
+---
+= Redis
+
+toc::[]
+
+AdonisJs可以很简单地使用link:http://redis.io/[redis, window="_blank"]。在内部使用link:https://github.com/luin/ioredis[ioredis, window="_blank"]，但API略有不同，以保持代码的可维护性和可读性。
+
+== 特点
+
+[pretty-list]
+1. Support for multiple redis connections.支持多重连接。
+2. Connect to redis cluster.连接到redis集群。
+3. 支持sentinel和transactions。
+4. 全面支持Pub/Sub。
+5. 友好支持ES2015 Generators.
+
+== 设置
+Redis Provider不附带AdonisJs的基本安装，这意味着您需要手动安装和设置。
+
+.Installing From Npm
+[source, bash]
+----
+npm i --save adonis-redis
+----
+
+.bootstrap/app.js
+[source, javascript]
+----
+const providers = [
+  // ...
+  'adonis-redis/providers/RedisFactoryProvider',
+  'adonis-redis/providers/RedisProvider'
+  // ...
+]
+----
+
+.bootstrap/app.js
+[source, javascript]
+----
+const aliases = {
+  // ...
+  Redis: 'Adonis/Addons/Redis'
+  // ...
+}
+----
+
+== 配置
+另外，配置文件需要保存为config/redis.js。您可以下载示例配置link:https://raw.githubusercontent.com/adonisjs/adonis-redis/develop/examples/redis.js[github]或运行以下bash命令自动保存文件。
+
+.使用wget下载
+[source, bash]
+----
+wget https://raw.githubusercontent.com/adonisjs/adonis-redis/develop/examples/redis.js -O config/redis.js
+----
+
+== 基本例子
+一旦配置完成，您可以在AdonisJs应用程序中使用Redis。我们从一个缓存redis内的用户的基本示例开始。
+
+NOTE: 下面的示例可能不是缓存用户的最佳方法，但是可以给你提供有关如何使用redis Provider的一些想法。
+
+.app/Http/Controllers/UsersController.js
+[source, javascript]
+----
+'use strict'
+
+const Redis = use('Redis')
+const User = use('App/Model/User')
+
+class UsersController {
+
+  * index (request, response) {
+    const cachedUsers = yield Redis.get('users')
+    if (cachedUsers) {
+      response.json(JSON.parse(cachedUsers))
+      return
+    }
+
+    const users = yield User.all()
+    yield Redis.set('users', JSON.stringify(users))
+    response.json(users)
+  }
+
+}
+----
+
+== Redis命令
+所有link:http://redis.io/commands[redis, window="_blank"]命令作为javascript函数支持。例如：
+
+[source, javascript]
+----
+'use strict'
+
+const Redis = use('Redis')
+const user = {
+  username: 'foo',
+  email: 'foo@bar.com'
+}
+
+yield Redis.hmset('users', user.username, JSON.stringify(user))
+const user = yield Redis.hmget('users', user.username) // returns stringified JSON
+----
+
+== Pub/Sub
+Redis内置支持Pub/Sub在同一台或多台服务器上共享消息。 AdonisJs提供了一个干净的API来订阅和发布消息，而无需任何额外的东西。
+
+建议在*bootstrap*目录下创建一个新文件来注册subscribers。
+
+.bootstrap/redis.js
+[source, javascript]
+----
+'use strict'
+
+const Redis = use('Redis')
+
+Redis.subscribe('music', function * (track) {
+  console.log('received track', track)
+})
+----
+
+接下来，您需要在`bootstrap/http.js`文件中要求这个文件，以确保在`require('./events')`语句之后引导HTTP服务器时加载。
+
+
+.bootstrap/http.js
+[source, javascript]
+----
+require('./redis')
+----
+
+现在您的应用程序中的任何地方，您可以发布到music频道，并且将会调用已注册的listener。
+
+.app/Http/routes.js
+[source, javascript]
+----
+'use strict'
+
+const Route = use('Route')
+const Redis = use('Redis')
+
+Route.post('musics', function * (request, response) {
+  Redis.publish('music', request.all())
+})
+----
+
+== Pub/Sub方法
+以下是Redis Provider内置的pub/sub方法列表
+
+==== subscribe(channel, listener)
+[source, javascript]
+----
+Redis.subscribe('music', function * (track, channel) {
+  console.log(track)
+})
+----
+
+另外，`listener`可以是`app/Listeners`目录下的一个模块的引用。
+
+[source, javascript]
+----
+Redis.subscribe('music', 'Music.newTrack')
+----
+
+.app/Listeners/Music.js
+[source, javascript]
+----
+'use strict'
+
+const Music = exports = module.exports = {}
+
+Music.newTrack = function * (track, channel) {
+  console.log(track)
+}
+----
+
+==== psubscribe(pattern, listener)
+`psubscribe`方法将订阅一个pattern，匹配的消息将被发送给监听器。
+
+
+[source, javascript]
+----
+Redis.psubscribe('h?llo', function * (message, channel, pattern) {
+})
+
+Redis.publish('hello')
+Redis.publish('hallo')
+----
+
+==== publish
+将消息发布到给定的频道。
+
+[source, javascript]
+----
+Redis.publish('music', {id: 1, title: 'Love me like you do', artist: 'Ellie goulding'})
+----
+
+==== unsubscribe(channel, [callback])
+取消订阅某个频道。
+
+[source, javascript]
+----
+Redis.unsubscribe('music')
+----
+
+==== punsubscribe(pattern, [callback])
+取消订阅给定的pattern。
+
+[source, javascript]
+----
+Redis.punsubscribe('h?llo')
+----
+
+== Transactions
+当您希望在给定的时间点执行批量操作时，Transactions是有帮助的。我们来看一个将用户添加到列表的例子。
+
+[source, javascript]
+----
+'use strict'
+
+const User = use('App/Model/User')
+const Redis = use('Redis')
+
+class UsersController {
+
+  * index (request, response) {
+    const users = yield User.all()
+
+    // Creating a transaction
+    const multi = Redis.multi()
+    users.each((user) => {
+      multi.lpush('users-list', JSON.stringify(user))
+    })
+    yield multi.exec()
+
+    response.json(users)
+  }
+
+}
+----
+
+==== multi
+创建一个新的事务来调用多个命令并一起执行。
+
+[source, javascript]
+----
+const multi = Redis.multi()
+multi
+  .set('foo', 'bar')
+  .set('bar', 'baz')
+
+const response = yield multi.exec()
+// [[null, 'OK'], [null, 'OK']]
+----
+
+== 管道
+管道与事务非常相似，但并不保证所有命令都将在事务中执行。管道有助于发送一批命令来保存网络往返。
+
+==== pipeline
+[source, javascript]
+----
+const pipeline = Redis.pipeline()
+pipeline
+  .set('foo', 'bar')
+  .set('bar', 'baz')
+
+const response = yield pipeline.exec()
+// [[null, 'OK'], [null, 'OK']]
+----
+
+== 多个连接
+您可以为`config/redis.js`文件中的多个连接定义配置，您可以通过调用`connection`方法来使用这些连接。
+
+.config/redis.js
+[source, javascript]
+----
+module.exports = {
+  connection: 'local',
+
+  local: {
+    ...
+  },
+
+  secondary: {
+    host: 'myhost.com',
+    port: 6379
+  }
+
+}
+----
+
+==== connection(name)
+切换到不同的连接。
+
+[source, javascript]
+----
+yield Redis.connection('secondary').get('users')
+----
+
+==== quit([name])
+AdonisJs创建连接池以重新使用已建立的连接。使用`quit`方法来关闭single/all的redis连接。
+
+[source, javascript]
+----
+const response = yield Redis.quit('secondary')
+// or
+const response = yield Redis.quit() // close all connections
+----
+
+== 生命周期Events
+您可以使用与外部参照相同的方式为生命周期Events注册listener xref:_pub_sub_methods[Pub/Sub]。
+
+.bootstrap/redis.js
+[source, javascript]
+----
+'use strict'
+
+const Redis = use('Redis')
+Redis.on('connect', function () {
+  // ...
+})
+
+Redis.on('error', function (error) {
+  // ...
+})
+----
+
+以下是Redis Provider发出的事件列表。
+
+[options="header"]
+|====
+事件 | 描述
+| connect | 当连接建立到Redis服务器时发出。
+| ready | 当发送集群的`CLUSTER INFO`能够接收命令(if *enableReadyCheck=true*)或紧接在“connect”事件之后(if *enableReadyCheck=false*)则发出。
+| error | 当连接一个表示最后一个节点错误的`lastNodeError`的属性发生错误时发出。这个事件是静默地发出的（只有至少有一个listener才会发出）。
+| close | 当已建立的Redis服务器连接已关闭时发出。
+| reconnecting | 在重新连接后，在`close`之后发出。事件的参数是重新连接之前的时间（以ms为单位）
+| end | 在没有更多重新连接的情况下，在close`后发出。
+| +node | 当连接新节点时发出。
+| -node | 当节点断开连接时发出。
+| node error | 当连接到节点时发生错误时发出
+|====

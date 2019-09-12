@@ -1,0 +1,90 @@
+---
+permalink: cookies
+categories:
+- web 开发工具类
+---
+= Cookies
+
+toc::[]
+
+读/写cookies在AdonisJs是一件轻而易举的事。您使用 link:request[request] 和链接：link:response[response] 实例传递给所有的控制器方法和路由闭包与cookie一起工作。
+
+NOTE: 保持你的Cookie加密确保定义  `app_key` 在 *.env* 文件中。或者，您可以使用 `./ace generate:key` 命令为您生成密钥。
+
+== 基本的例子
+让我们以一个基本的例子来跟踪指定用户的访问的视图。
+
+[source, javascript]
+----
+Route.get('/', function * (request, response) {
+  const pageViews = request.cookie('pageViews', 0) // reading
+  pageViews++
+  response.cookie('pageViews', pageViews) // writing
+})
+----
+
+== 读 Cookies
+读取 cookies 是通过 *request 实例*
+
+==== cookie(key, [defaultValue])
+返回给定键的cookie值。默认值返回时，现有的值是 'null' 或 'undefined' 。
+
+[source, javascript]
+----
+Route.get('/', function * (request, response) {
+  const cartTotal = request.cookie('cartTotal')
+  // or
+  const cartTotal = request.cookie('cartTotal', 0)
+})
+----
+
+==== cookies
+返回一个包含cookie的对象。
+
+[source, javascript]
+----
+Route.get('/', function * (request, response) {
+  const cookies = request.cookies()
+})
+----
+
+== 写入/删除 Cookies
+通过 *response 实例* 对cookie进行创建和删除
+
+==== cookie(key, value, [options])
+
+[source, javascript]
+----
+Route.get('/', function * (request, response) {
+  response.cookie('cartValue', 210)
+
+  // or
+  response.cookie('cartValue', 210, {
+    httpOnly: true
+  })
+})
+----
+
+.Options
+[options="header"]
+|====
+| Property | type | description
+| path | String | cookie 路径
+| expires | Date |cookie的绝对到期日期。 必须是有效的 *Date对象* 。
+| maxAge | String | 从客户端接收到的cookie的相对最大时间 *（以秒为单位）* 。
+| domain | String | cookie的生效域名。
+| secure | Boolean | 将cookie标记为仅与HTTPS一起使用。
+| httpOnly | Boolean | 将Cookie标记为仅由Web服务器访问。 无法使用`document.cookie`访问。
+| firstPartyOnly | Boolean | 定义仅由同一个域使用的Cookie。
+|====
+
+==== clearCookie(key)
+移除所有存在的cookie
+
+[source, javascript]
+----
+Route.get('checkout', function * (request, response) {
+  response.clearCookie('cartValue')
+  response.send('Order Confirmed')
+})
+----

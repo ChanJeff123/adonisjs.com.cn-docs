@@ -1,0 +1,377 @@
+---
+permalink: mail
+categories:
+- web 开发工具类
+---
+= 邮件
+
+toc::[]
+
+发送电子邮件是Web应用程序的一项常见任务。adonisjs官方 *Mail Provider* 使得它很容易和直观的使用一个可用的驱动程序发送电子邮件。
+
+== 驱动
+下面是可用的驱动程序列表，您可以自由扩展和添加自定义驱动程序。
+
+[support-list]
+1. SMTP (smtp).
+2. Amazon SES (ses).
+3. Mandrill (mandrill).
+4. MailGun (mailgun).
+5. Log (log)
+
+提示：在运行测试时使用 `log` 驱动程序，因为它会将电子邮件记录到文件中，而不是发送给真实的人。
+
+== 安装
+邮件服务不是基础安装的一部分，您必须从npm上面安装到项目中，让我们做一个快速的2分钟设置。
+
+.从npm上安装
+[source, bash]
+----
+npm i --save adonis-mail-provider
+----
+
+接下来，我们需要注册服务并为其设置别名。
+
+.bootstrap/app.js
+[source, javascript]
+----
+const providers = [
+  ...,
+  'adonis-mail-provider/providers/MailProvider'
+]
+----
+
+.bootstrap/app.js
+[source, javascript]
+----
+const aliases = {
+  Mail: 'Adonis/Addons/Mail'
+}
+----
+
+== 配置
+此外，配置文件需要保存为 `config/mail.js` 。你可以从链接下载示例配置：link:https://raw.githubusercontent.com/adonisjs/adonis-mail/master/examples/mail.js[github, window="_blank"] 或运行在bash命令保存文件自动。
+
+.使用wget下载
+[source, bash]
+----
+wget https://raw.githubusercontent.com/adonisjs/adonis-mail/master/examples/mail.js -O config/mail.js
+----
+
+== 基本例子
+让我们以一个基本的例子发送欢迎电子邮件给新注册的用户。我们需要在发送邮件之前设置一条路由和一个视图。
+
+.app/Http/routes.js
+[source, javascript]
+----
+'use strict'
+
+const Route = use('Route')
+Route.post('users', 'UsersController.store')
+----
+
+.app/Http/Controllers/UsersController.js
+[source, javascript]
+----
+'use strict'
+
+const Mail = use('Mail')
+const User = use('App/Model/User')
+
+class UsersController {
+
+  * store (request, response) {
+    const user = yield User.create(userDetails) <1>
+
+    yield Mail.send('emails.welcome', user, (message) => {
+      message.to(user.email, user.firstname)
+      message.from('awesome@adonisjs.com')
+      message.subject('Welcome to the Kitten\'s World')
+    }) <2>
+  }
+}
+----
+
+<1> 确保在保存到DB之前验证用户详细信息。
+<2> `Mail.send` 方法将通过接受一条路由作为第一个参数来发送电子邮件。
+
+.Creating emails.welcome view
+[source, bash]
+----
+./ace make:view emails/welcome
+----
+
+.resources/views/emails/welcome.njk
+[source, twig]
+----
+<h2> Heya {{ firstname}} </h2>
+
+<p> Welcome to the kitten's world. We will be sharing lots of cute kittens with you soon</p>
+----
+
+== 邮件方法
+以下是用于发送电子邮件的方法列表。
+==== send(view, data, callback, [configKey])
+send 方法将编译具有给定数据的视图，并将其作为HTML发送。回调给你 xref:_message_builder[消息生成器]来定义电子邮件属性。
+
+[source, javascript]
+----
+yield Mail.send('receipt', {name: 'Doe', amount: 22}, message => {
+  // ...
+})
+----
+
+==== raw(body, callback, [configKey])
+使用原始文本发送电子邮件，而不是使用视图。
+
+[source, javascript]
+----
+yield Mail.raw('Your security code is 301030', message => {
+  message.from('secret@yourcompany.com')
+  message.to('doe@example.org', 'Doe')
+})
+----
+
+== 消息生成器
+消息生成器使它非常容易关联方法和建立消息体。传递给 `message` 的参数。发送 *Mail.send* 该方法是消息生成器的一个实例，下面是可以调用的方法列表。
+
+==== from(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.from('awesome@adonisjs.com', 'AdonisJs')
+})
+----
+
+==== sender(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.sender('awesome@adonisjs.com', 'AdonisJs')
+})
+----
+
+==== replyTo(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.replyTo('noreply@adonisjs.com')
+})
+----
+
+==== to(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.to('johndoe@example.com', 'John Doe')
+})
+----
+
+==== cc(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.cc('jamie@example.com', 'Jamie Doe')
+})
+----
+
+==== bcc(email, [name])
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.bcc('finance@example.com')
+})
+----
+
+==== subject(message)
+[source, javascript]
+----
+yield Mail.send('receipt', {}, message => {
+  message.subject('Recent purchase receipt')
+})
+----
+
+priority(level)
+设置电子邮件优先级。它需要是下列之一：
+
+* high
+* low
+* normal
+
+[source, javascript]
+----
+message.priority('high')
+----
+
+==== header(key, value)
+[source, javascript]
+----
+message.header('x-id', 1)
+----
+
+==== headers(arrayOfHeaders)
+[source, javascript]
+----
+message.header([{ key: 'x-id', value: 1 }])
+----
+
+==== attach(filePath, [options])
+向邮件中添加附加
+
+[source, javascript]
+----
+message.attach(path.join(__dirname, '/assets/logo.png'))
+message.attach(path.join(__dirname, '/assets/logo.png'), { filename: 'MyLogo.png' })
+----
+
+.附加选项
+[options="header"]
+|====
+| Key | Type | Description
+| filename | String | Name of the file. If not defined, will be picked from the file path.
+| contentType | String  | Attachment *Content type*. If not defined, will be picked from the file extension.
+| contentDisposition | String  | Content-disposition, defaults to attachment.
+| encoding  | String | Attachment encoding must from *base64*, *hex* and *binary*.
+|====
+
+==== attachData(data, filename, [options])
+附加原始数据作为附件的电子邮件。
+
+提示：附件选项与 `attach` 方法相同。
+
+[source, javascript]
+----
+message.attachData('some raw content', 'raw.txt')
+----
+
+==== embed(filePath, cid, [options])
+在邮件正文中嵌入文件。`cid` 必须是唯一的，所以你可以在你的HTML视图中引用它。
+
+[source, javascript]
+----
+message.embed(path.join(__dirname, '/assets/logo.png'), 'logo')
+----
+
+.Embedding inside views
+[source, twig]
+----
+<img src="cid:logo" />
+----
+
+==== html(body)
+电子邮件的HTML自动从视图中创建。如果您想重写它，请使用此方法。
+
+[source, javascript]
+----
+message.html('My custom html')
+----
+
+==== text(body)
+为电子邮件设置 *plainText* 。它定义的电子邮件客户端不支持HTML。
+
+提示：所有流行的电子邮件客户端都支持HTML。
+
+[source, javascript]
+----
+message.text('A plaintext view')
+----
+
+==== watchHtml(body)
+设置为 *Apple Watch* 可以显示的HTML。
+
+[source, javascript]
+----
+message.watchHtml('Email body for apple watch')
+----
+
+== 传递多个视图
+您可以通过将数组传递到 xref:_send_view_data_callback_configkey[send] 方法，为*HTML*, *Plain text* 和 *Apple watch* 定义多个视图。
+
+[source, javascript]
+----
+yield Mail.send(['welcome', 'welcome-text', 'welcome-watch'], {}, message => {
+  // ...
+})
+----
+
+== 变更驱动
+配置文件中定义的默认驱动程序用于发送电子邮件，但您可以使用 `driver` 方法在运行时切换驱动程序。
+
+[source, javascript]
+----
+const mandrill = Mail.driver('mandrill')
+
+yield mandrill.send('emails.welcome', {}, message => {
+  // ...
+})
+----
+
+== 添加新的驱动
+您还可以通过扩展它向 *Mail provider* 添加新的驱动程序，这里要注意一些要点。
+
+[pretty-list]
+1. AdonisJs 使用 link:https://github.com/nodemailer/nodemailer[nodemailer, window="_blank"] 来发送邮件。 您也可以将现有的nodemailer传输包装到驱动程序。
+2. 你的驱动必须有一个`send`方法。
+
+让我们使用link:https://github.com/killmenot/nodemailer-postmark-transport[nodemailer postmark transport, window="_blank"]创建一个新的驱动程序，并通过IoC容器注册。
+
+=== 写入驱动
+
+.src/PostMark.js
+[source, javascript]
+----
+'use strict'
+
+class PostMark {
+
+  constructor (Config) {
+    this.config = Config
+    this.transport = this._createTransport('mail.postmark') <1>
+  }
+
+  _createTransport (configKey) {
+    const options = this.config.get(configKey) <2>
+    const nodemailer = require('nodemailer')
+    const postmarkTransport = require('nodemailer-postmark-transport')
+    return nodemailer.createTransport(postmarkTransport(options)) <3>
+  }
+
+  send (message, configKey) {
+    const transport = configKey ? this._createTransport(configKey) : this.transport <4>
+    return transport.sendMail(message) <5>
+  }
+
+}
+----
+
+<1> 我们通过调用 `_createTransport` 方法创建一个默认传输，并将其传递给配置。
+<2> 这里我们使用link:config[config provider] `get`方法来拉取给定键的配置。
+<3> 接下来，我们返回一个nodemailer传输的实例。
+<4> 在 `send` 方法中，如果用户在运行时定义了一个不同的配置密钥，我们将创建传输。 否则，我们使用默认传输。
+<5> 最后，我们将使用传输 `sendMail` 方法发送电子邮件。
+
+=== 注册驱动
+我们都设置为通过扩展邮件服务注册该驱动程序。
+
+.bootstrap/extend.js
+[source, javascript]
+----
+const Ioc = use('adonis-fold').Ioc
+const Postmark = require('../src/PostMark')
+
+Ioc.extend('Adonis/Addons/Mail', 'postmark', function (app) {
+  const Config = app.use('Adonis/Src/Config')
+  return new PostMark(Config)
+})
+----
+
+=== 使用PostMark驱动
+[source, javascript]
+----
+yield Mail.driver('postmark').send('emails.welcome', {}, message => {
+  // ...
+})
+----
+
+== 测试邮件
+AdonisJs提供了一个 *Log Driver* ，可以在编写测试时使用。 日志驱动程序将所有电子邮件保存为 *storage/logs/mail.eml* 文件作为字符串。 您可以解析此文件以进行测试断言。

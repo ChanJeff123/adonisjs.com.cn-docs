@@ -1,0 +1,83 @@
+---
+title: 安装
+category: 起步
+permalink: installation
+---
+
+= 安装
+
+toc::[]
+
+安装AdonisJs是一个相对简单的过程，只需要几分钟。
+
+== 系统要求
+
+框架的唯一依赖项是 `Node.js` 和 `npm`.
+
+确保您的这些工具版本符合以下条件:
+
+- Node.js >= 8.0.0
+- npm >= 3.0.0
+
+TIP: 你可以使用类似 link:https://github.com/creationix/nvm[nvm, window="_blank"] 等工具帮你管理Node.js和npm
+
+== 安装AdonisJs
+
+=== 通过 AdonisJs CLI
+
+AdonisJs CLI 是一个帮助您安装AdonisJs的命令行工具.
+
+可通过 `npm` 命令将其安装到全局:
+[source, bash]
+----
+> npm i -g @adonisjs/cli
+----
+
+TIP: 当然，你也可以使用 `npx` 命令将其安装到局部，而非全局.
+
+请确保已经将 `npm` 系统范围的 `node_modules/.bin` 目录添加到 `$PATH` 中，以便能够访问已经安装好的二进制文件
+
+一旦安装成功，您可以使用 `adonis new` 命令来来创建一个项目
+
+假如要创建一个名为 `yardstick` 的新项目, 只需执行:
+
+[source, bash]
+----
+> adonis new yardstick
+----
+
+[NOTE]
+======
+默认情况下，link:https://github.com/adonisjs/adonis-fullstack-app[全栈蓝图样板, window="_blank"]需要你从Github上克隆下来。你可以通过 `--api-only` 或 `--slim` 选项来指定版本
+
+你也可以通过 `--blueprint=<github-org/repo>` 选项来指定自己的蓝图样板仓库。
+======
+
+=== 通过 Git
+
+或者，你也可以通过 `git` 来获取我们的样板代码:
+
+[source, bash]
+----
+# Fullstack（全栈）
+> git clone --dissociate https://github.com/adonisjs/adonis-fullstack-app
+
+# API（接口）
+> git clone --dissociate https://github.com/adonisjs/adonis-api-app
+
+# Slim（简化版）
+> git clone --dissociate https://github.com/adonisjs/adonis-slim-app
+----
+
+克隆样板代码后，请运行 `npm install` 来安装所有依赖项。
+
+== 为应用程序提供服务
+
+安装完成后，你可以 `cd` 到应用程序目录中，然后运行以下命令来启动 HTTP 服务器：
+
+[source, bash]
+----
+> adonis serve --dev
+----
+
+该命令会将服务器启动，将其运行在根目录的 `.env` 文件中所定义的那个端口上

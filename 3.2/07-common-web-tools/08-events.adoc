@@ -1,0 +1,220 @@
+---
+permalink: events
+categories:
+- web 开发工具类
+---
+= 事件
+
+toc::[]
+
+AdonisJs有一个美丽的link:https://nodejs.org/docs/latest-v6.x/api/events.html[Event Emitter, window="_blank"] 发出和收听并支持 *ES2015 generators* ， *wildcards* 和 a *dedicated directory* 来存储/管理侦听器。
+
+== 关于事件
+
+[pretty-list]
+1. 事件在 `bootstrap/events.js` 文件中定义。
+2. 事件监听器可以被定义为 *闭包* ，或者可以绑定IoC容器命名空间。
++
+[source, javascript]
+----
+Event.on('user.registered', function * (user) {
+})
+
+// OR
+Event.on('user.registered', 'User.registered')
+----
+
+3. `app/Listeners` 目录专门用于存储事件侦听器。
+4. 将侦听器绑定到事件时，不需要输入整个命名空间。 例如，存储为 `app/Listeners/User.js` 的监听器将被引用为 `User.<method>` 。
+5. 使用 `make:listener` 命令创建一个新的事件侦听器。
++
+[source, bash]
+----
+./ace make:listener User
+
+# create: app/Listeners/User.js
+----
+
+== 配置
+事件服务的配置存储在 `config/events.js` 文件中。 在AdonisJs底层使用 link:https://github.com/asyncly/EventEmitter2[EventEmitter 2, window="_blank"] 并实现所有可用的配置选项。
+
+== 基本例子
+让我们来看一个基本的例子，使用 *Events provider* 向新注册的用户发送欢迎电子邮件。 我们将开始设置路由，并在创建新用户后使用 *UsersController* 触发事件。
+
+.app/Http/routes.js
+[source, javascript]
+----
+'use strict'
+
+const Route = use('Route')
+Route.post('users', 'UsersController.store')
+----
+
+.bootstrap/events.js
+[source, javascript]
+----
+'use strict'
+
+const Event = use('Event')
+Event.when('user.registered', 'User.sendWelcomeEmail') <1>
+----
+
+.app/Http/Controllers/UsersController.js
+[source, javascript]
+----
+'use strict'
+
+const Event = use('Event')
+const User = use('App/Model/User')
+
+class UsersController {
+  * store (request, response) {
+    const user = yield User.create(userDetails)
+    Event.fire('user.registered', user.toJSON()) <2>
+  }
+}
+----
+
+.app/Listeners/User.js
+[source, javascript]
+----
+'use strict'
+
+const Mail = use('Mail')
+const User = exports = module.exports = {}
+
+User.sendWelcomeEmail = function * (user) {
+  yield Mail.send('emails.welcome', user, message => {
+    message.to(user.email, user.firstname)
+    message.from('awesome@adonisjs.com')
+    message.subject('Welcome to the Kitten\'s World')
+  })
+}
+----
+
+<1> 首先我们需要为事件注册一个监听器。
+<2> `UsersController.store` 方法将触发 *user.registered* 事件并传递新创建的用户。
+
+== 事件方法
+以下是事件服务公开的可用方法的列表。
+
+==== when(event, [name], listener)
+注册给定事件的监听器。 您还可以为侦听器定义可选名称，以便稍后将其删除。
+
+[source, javascript]
+----
+Event.when('user.registered', 'Mail.sendWelcomeEmail')
+----
+
+[source, javascript]
+----
+Event.when('user.registered', function * () {
+  // ...
+})
+----
+
+[source, javascript]
+----
+Event.when('user.registered', 'registration', 'User.sendWelcomeEmail')
+----
+
+.Aliases
+[options="header"]
+|====
+| Alias | Example
+| listen | `Event.listen('user.registered', function * () {})`
+| on | `Event.on('user.registered', function * () {})`
+|====
+
+==== once(event, handler)
+与 `when` 相同，但只能执行一次。
+
+[source, javascript]
+----
+Event.once('app.boot', function * () {
+  // ...
+})
+----
+
+==== any(handler)
+附加全局事件监听器以监听所有事件。
+
+[source, javascript]
+----
+Event.any(function (event) {
+  console.log(event)
+})
+----
+
+==== times(number)
+为事件监听器的执行次数设置一个限制，并在此之后被删除。
+
+[source, javascript]
+----
+Event.times(4).when('user.registered', function () {
+  // I will be executed 4 times only
+})
+----
+
+==== fire(event, data)
+触发事件
+
+[source, javascript]
+----
+Event.fire('user.registered', user)
+----
+
+.别名
+[options="header"]
+|====
+| Alias | Example
+| emit | `Event.emit('user.registered', user)`
+|====
+
+==== removeListeners([event])
+从给定事件或所有事件中删除所有监听器。
+
+[source, javascript]
+----
+Event.removeListeners() // will remove all listeners
+Event.removeListeners('user.registered') // will remove listeners for user.registered event only
+----
+
+==== removeListener(event, name)
+删除给定事件的命名监听器。
+
+[source, javascript]
+----
+// register multiple
+Event.when('user.registered', 'Logger.log')
+Event.when('user.registered', 'registration', 'Mail.sendWelcomeEmail')
+
+// remove a specific one
+Event.removeListener('user.registered', 'registration')
+----
+
+==== hasListeners(event)
+返回一个布尔值，判断是否有监听这个事件
+
+[source, javascript]
+----
+Event.hasListeners('user.registered')
+----
+
+==== getListeners(event)
+返回指定事件的监听器数组。
+
+[source, javascript]
+----
+Event.getListeners('user.registered')
+----
+
+== Emitter Instance
+所有事件侦听器都可以访问发射器实例。
+
+[source, javascript]
+----
+Event.when('user.registered', function () {
+  console.log(this.emitter)
+})
+----

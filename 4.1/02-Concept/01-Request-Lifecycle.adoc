@@ -1,0 +1,56 @@
+---
+title: 请求生命周期
+category: 核心概念
+permalink: request-lifecycle
+---
+
+= 请求生命周期
+
+toc::[]
+
+== 介绍
+
+Node.js 平台是异步的。对于初学者来说，很难理解它是如何工作的，以及如何处理它对应用程序流的非阻塞方法。
+
+区分你为前端编写的 JavaScript 和为后端编写的 JavaScript 也会令人困惑。虽然它们在语法上是相同的，但却不在相同的 run-time（运行时） 和 context （上下文）中运行。
+
+必须拥有对请求生命周期概念更高层次的理解，才会让你觉得AdonisJs不那么“神奇”，并且你在构建应用程序时也会更有信心。
+
+== 请求流程
+
+从客户端发送的 HTTP 请求由 AdonisJs `Server` 模块处理，执行所有 **服务级别的中间件** （例如：为 `public` 目录中的静态文件提供服务的 `StaticFileMiddleware`）。
+
+如果请求没有被服务级别的中间件终止，那么AdonisJs `Router` 就会发挥作用。它会试图查找与请求URL匹配的路由。如果 `Router` 找不到匹配项，便会抛出一个 `RouteNotFound` 异常。
+
+找到匹配的路由后，所有 **全局中间件** 都将被执行，然后再执行为匹配路由所定义的任意 **命名中间件**。如果没有全局或者命名中间件终止请求，则会调用匹配的路由处理程序。
+
+你必须在路由处理程序中终止请求。一旦终止，AdonisJs 会执行所有 **下游中间件** 并将响应发送会客户端。
+
+## HTTP Context (上下文)
+
+AdonisJs 为每个路由处理程序提供一个 **HTTP Context** 对象。
+
+该对象包含处理请求时所需的一切，比如 `请求` 和 `响应` 类，并可通过 link:service-providers[Providers] 或 link:middleware[Middleware] 轻松扩展：
+
+.start/routes.js
+[source, js]
+----
+Route.get('/', ({ request, response, view }) => {
+  // request
+  // response
+  // view
+})
+----
+
+或者，你可以直接使用它，而不用对其进行解包。
+
+.start/routes.js
+[source, js]
+----
+Route.get('/', (ctx) => {
+  // ctx.request
+  // ctx.response
+  // ctx.view
+  // etc
+})
+----

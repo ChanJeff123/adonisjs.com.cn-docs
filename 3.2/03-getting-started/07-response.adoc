@@ -1,0 +1,272 @@
+---
+permalink: response
+categories:
+- 起步
+---
+= 响应
+
+toc::[]
+
+完成一次HTTP请求, 你必须给予一个响应, *Response*这个类让你轻松的渲染nunjucks模板, 或者为api返回一个JSON数据.
+
+TIP: 你可以通过`response.response`访问到Node.js原生的*response对象*.
+
+== 小例子
+响应实例通过`request`实例传入所有的控制器和路由闭包, 你可以用它来渲染模板, 或者是返回JSON数据.
+
+=== 渲染模板
+[source, javascript]
+----
+Route
+  .get('/', function * (request, response) {
+    yield response.sendView('welcome') // resources/views/welcome.njk
+  })
+----
+
+=== 返回JSON数据
+[source, javascript]
+----
+Route
+  .get('users', function * (request, response) {
+    const users = yield User.all() // fetch users
+    response.json(users)
+  })
+----
+
+== 响应方法
+下面这个表列出了HTTP响应的方法, 它可以操作内容, 响应头, 和cookies.
+
+==== send(body)
+这个方法可以给用户返回一个指定数据, 你可以返回任意数据类型, AdonisJs知道怎么处理这些数据和响应头.
+
+[source, javascript]
+----
+response.send('Hello world')
+// or
+response.send({ name: 'doe' })
+// or
+response.send(1)
+----
+
+=== status(code)
+设置响应状态码, 默认200.
+
+[source, javascript]
+----
+response.status(201).send('Created')
+----
+
+==== json(body)
+返回一个json数据, 并且响应头里面的Content-Type被设置为*application/json*.
+
+[source, javascript]
+----
+response.json({ name: 'doe' })
+----
+
+==== jsonp(body)
+创建一个JSONP响应，且响应头里面的Content-Type被设置为*text/javascript*。它将使用所定义的查询字符串作为回调，如果不存在，则使用 *config / app.js* 文件中定义的 *http.jsonpCallback*
+
+[source, javascript]
+----
+response.jsonp({ name: 'doe' })
+----
+
+==== vary(field)
+添加一个Vary响应头. 你可以看看link:https://www.fastly.com/blog/best-practices-for-using-the-vary-header[这里, window="_blank"]来理解Vary.
+
+[source, javascript]
+----
+response.vary('Accept-Encoding')
+----
+
+==== sendView(path)
+渲染nunjucks模板.
+
+[source, javascript]
+----
+yield response.sendView('welcome')
+----
+
+==== download(filePath)
+返回一个可以下载的文件.
+
+[source, javascript]
+----
+response.download(Helpers.storagePath('report.xls'))
+----
+
+==== attachment(filePath, [name], [disposition=attachment])
+强制下载一个文件, (通过设置*Content-Disposition*响应头).
+
+[source, javascript]
+----
+response.attachment(Helpers.storagePath('report.xls'), 'Daily-Report.xls')
+----
+
+== 响应头
+
+==== header(key, value)
+添加一个响应头.
+
+[source, javascript]
+----
+response.header('Content-type', 'application/json')
+----
+
+==== removeHeader(key)
+去掉一个响应头.
+
+[source, javascript]
+----
+response.removeHeader('Accept')
+----
+
+== 重定向
+
+==== location(url)
+通过设置*Location*响应头, 来让用户跳转页面, 你可以传入`back`来跳转到前一个页面(这个方法通过*Referrer*来判断前一个页面的链接).
+
+[source, javascript]
+----
+response.location('/signup')
+// 或
+response.location('back')
+----
+
+==== redirect(url, [status=302])
+通过状态码, 重定向到一个指定链接.
+
+[source, javascript]
+----
+response.redirect('back')
+// 或
+response.redirect('/welcome', 301)
+----
+
+==== route(route, data, status)
+重定向到一个指定的路由上.
+
+NOTE: 如果这个路由找不到, 这个路由将会被认为是一个链接, 将会直接重定向到这个连接上.
+
+[source, javascript]
+----
+Route
+  .get('users/:id', '...')
+  .as('profile')
+
+response.route('profile', {id: 1})
+// 重定向到 /user/1
+----
+
+== 描述方法
+AdonisJs有很多描述方法, 这些方法比单纯的`send`方法更易懂.
+
+[source, javascript]
+----
+response.unauthorized('请登录~')
+----
+
+上面这个例子比下面这个例子更易懂.
+
+[source, javascript]
+----
+response.status(401).send('请登录~')
+----
+
+下面是描述方法的列表, 你可以看看 link:https://httpstatuses.com[httpstatuses.com, window="_blank"] 来理解状态码.
+
+[options="header"]
+|====
+| Method | Http Response Status
+| continue | 100
+| switchingProtocols | 101
+| ok | 200
+| created | 201
+| accepted | 202
+| nonAuthoritativeInformation | 203
+| noContent | 204
+| resetContent | 205
+| partialContent | 206
+| multipleChoices | 300
+| movedPermanently | 301
+| found | 302
+| seeOther | 303
+| notModified | 304
+| useProxy | 305
+| temporaryRedirect | 307
+| badRequest | 400
+| unauthorized | 401
+| paymentRequired | 402
+| forbidden | 403
+| notFound | 404
+| methodNotAllowed | 405
+| notAcceptable | 406
+| proxyAuthenticationRequired | 407
+| requestTimeout | 408
+| conflict | 409
+| gone | 410
+| lengthRequired | 411
+| preconditionFailed | 412
+| requestEntityTooLarge | 413
+| requestUriTooLong | 414
+| unsupportedMediaType | 415
+| requestedRangeNotSatisfiable | 416
+| expectationFailed | 417
+| unprocessableEntity | 422
+| tooManyRequests | 429
+| internalServerError | 500
+| notImplemented | 501
+| badGateway | 502
+| serviceUnavailable | 503
+| gatewayTimeout | 504
+| httpVersionNotSupported | 505
+|====
+
+== 扩展响应
+可能你想为`Response`类添加新的原型方法, 可以通过定义宏来实现.
+
+==== 程序独有的
+如果你的宏是你自己程序独有的, 你可以配置`app/Listeners/Http.js`文件去监听*start*事件, 来添加自定义宏.
+
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.onStart = function () {
+  const Response = use('Adonis/Src/Response')
+  Response.macro('sendStatus', function (status) {
+    this.status(status).send(status)
+  })
+}
+----
+
+==== 通过服务提供者(Provider)
+如果你想写一个AdonisJs的模块和插件, 你可以在你的服务提供者(Service Provider)的`boot`方法里面添加一个宏.
+
+[source, javascript]
+----
+const ServiceProvider = require('adonis-fold').ServiceProvider
+
+class MyServiceProvider extends ServiceProvider {
+
+  boot () {
+    const Response = use('Adonis/Src/Response')
+    Response.macro('sendStatus', function (status) {
+      this.status(status).send(status)
+    })
+  }
+
+  * register () {
+    // 注册你的绑定
+  }
+
+}
+----
+
+你可以像使用其他`response`方法一样使用你定义的宏.
+
+[source, javascript]
+----
+response.sendStatus(404)
+----

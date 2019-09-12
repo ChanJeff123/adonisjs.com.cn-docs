@@ -1,0 +1,186 @@
+---
+permalink: adonis-blog-part1
+categories:
+- 教程
+---
+= 起步
+
+toc::[]
+
+这是教程的第一部分。 在这个系列的结尾, 你会发现自己舒服的Adonisjs概念创造你的下一个雄心勃勃的WebApp。
+
+确保您遵循的链接：link:installation[安装]安装过程，能够运行Adonisjs服务器看到的欢迎页面。在本教程中，我们将首先创建一个新的应用程序，并注册一些路由来渲染视图。
+
+== 创建新的应用
+我们将可以执行 *adonis* 去创建一个新的应用。
+
+[source, bash]
+----
+adonis new blog
+----
+
+.Output
+[source]
+----
+Cloning into 'blog'...
+cleaning project
+setting up app key
+Fixing ace file
+installing dependencies may take a while
+installing dependencies....
+----
+
+以上命令将创建一个新的项目 *blog* 。现在使用cd进入目录并启动服务器。
+
+[source, bash]
+----
+cd blog
+npm run dev
+----
+
+.Output
+[source]
+----
+[nodemon] starting `node --harmony_proxies server.js`
+info adonis:framework serving app on http://localhost:3333
+----
+
+== 创建路由
+AdonisJs带有一个预先定义的路由，使得能到达 *welcome.njk* 这个页面。让我们删除这条路由，从头开始。
+
+.app/Http/routes.js
+[source, javascript]
+----
+'use strict'
+
+const Route = use('Route')
+
+Route.on('/').render('home')
+Route.on('/about').render('about')
+Route.on('/contact').render('contact')
+----
+我们已经注册了3个不同的路由去渲染 *home* , *about* 和 *contact* 这三个页面;
+
+== 创建视图
+让我们在终端上输入下面的命令来创建这三个视图。
+
+[source, bash]
+----
+./ace make:view home
+./ace make:view about
+./ace make:view contact
+----
+
+link:interactive-shell[Ace]是AdonisJs提供一个命令行工具。您可以利用Ace命令生成 *views* ，*controllers* 和 *models* 等
+
+视图放在 `resources/views` 目录里面并且必须是 `.njk` 的后缀。让我们打开 `home.njk` 这个文件写一些html到这个文件中。
+
+.resources/views/home.njk
+[source, html]
+----
+<h2> This is the home page </h2>
+----
+
+现在刷新浏览器，您将看到我们在home视图中写入的标题。
+
+在AdonisJs中渲染Nunjucks模板非常简单。 让我们在所有的视图中写一些HTML，并将它们链接在一起。
+我们将使用 link:http://v4-alpha.getbootstrap.com/[Bootstrap, window="_blank"] 来设计网页。
+
+.resources/views/master.njk
+[source, twig]
+----
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+
+    <div class="header clearfix">
+      <nav>
+        <ul class="nav nav-pills pull-xs-right">
+          <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="/about" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="/contact" class="nav-link">Contact</a></li>
+        </ul>
+        <h3 class="text-muted"> Adonis Blog </h3>
+      </nav>
+    </div>
+
+    <section>
+      {% block content %}{% endblock %}
+    </section>
+
+  </div>
+</body>
+</html>
+----
+
+`master.njk` 是一个基础的模板每一个视图都应该继承它，现在复制并粘贴下面的代码到 `home.njk` 这个文件中
+
+.resources/views/home.njk
+[source, twig]
+----
+{% extends 'master' %}
+
+{% block content %}
+  <h2> Blog posts will be listed here </h2>
+{% endblock %}
+----
+
+我们还需要一些 *CSS* 使这个页面更加好看一些。因此，复制和粘贴下面的片段到 `public/style.css` 中。
+
+.public/style.css
+[source, css]
+----
+body {
+  background: #ffffff;
+}
+
+.header {
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+  border-bottom: .05rem solid #e5e5e5;
+}
+
+@media (min-width: 48em) {
+  .container {
+    max-width: 46rem;
+  }
+}
+
+.header h3 {
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 3rem;
+}
+----
+
+现在去刷新浏览器查看下首页。
+
+=== 首页预览
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841283/home-page_uab9il.png[]
+
+让我们去完成其他页面
+
+.resources/views/about.njk
+[source, twig]
+----
+{% extends 'master' %}
+
+{% block content %}
+  <h2> This is the about page </h2>
+{% endblock %}
+----
+
+.resources/views/contact.njk
+[source, twig]
+----
+{% extends 'master' %}
+
+{% block content %}
+  <h2> This is the contact page </h2>
+{% endblock %}
+----

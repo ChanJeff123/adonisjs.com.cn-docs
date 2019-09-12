@@ -1,0 +1,79 @@
+---
+permalink: nginx-proxy
+title: Nginx 代理
+category: recipes
+---
+= Nginx 代理
+
+toc::[]
+
+此专题主要分享使用 `nginx` 代理为 AdonisJs 应用程序提供服务所需的最少步骤。
+
+== 第一步
+在开始之前，请确保你可以在已定义的端口上运行你的应用程序。此外，建议使用类似 `pm2` 这样的进程管理器来启动你的 Node.js 服务器。
+
+[source, bash]
+----
+pm2 start server.js
+----
+
+验证它是否正常的工作
+
+[source, js]
+----
+pm2 list
+----
+
+想要检查应用程序日志，你可以运行以下命令
+
+[source, js]
+----
+pm2 logs
+----
+
+== Nginx 代理
+
+打开 `默认` 的服务器配置文件。
+
+译者注：Nginx的配置文件因不同配置而不同，不一定为以下路径，默认一般是 /etc/nginx/nginx.conf 文件。
+
+[source, bash]
+----
+# empty the file
+echo > /etc/nginx/sites-available/default
+
+# open in editor
+vi /etc/nginx/sites-available/default
+----
+
+此外，将以下代码粘贴到其中。
+
+[source, nginx]
+----
+server {
+  listen 80;
+
+  server_name myapp.com;
+
+  location / {
+      proxy_pass http://localhost:3333;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_cache_bypass $http_upgrade;
+  }
+}
+----
+
+=== 注意事项
+
+1. 假设 `nginx` 已经安装并按预期工作。
+2. 你的应用程序正运行在 `3333端口` 上。如果没有，则要在 nginx 配置文件中修改 `proxy_pass` 块选项为你定义的那个端口。
+3. 请替换 `myapp.com` 为你的应用程序的实际域名。
+4. 在 link:https://github.com/adonisjs/adonis-slim-app/blob/develop/config/app.js#L43[config/app.js] 文件中将 `trustProxy` 的值改为 *true*。
+
+现在访问 `myapp.com` 将会显示你的 Adonisjs 应用程序，因为 `nginx` 正在代理指定端口上所运行的应用程序的所有请求。

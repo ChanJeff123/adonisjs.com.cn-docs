@@ -1,0 +1,242 @@
+---
+permalink: ioc-container
+title: IoC 容器
+category: 核心概念
+---
+
+= IoC 容器
+
+toc::[]
+
+== 介绍
+在了解 **控制反转 (IoC)** 容器的使用和好处之前，我们需要回过头来了解大型代码库所面临的依赖关系管理问题。
+
+=== 无用的抽象
+经常会遇到这样的情况，您必须为库创建无用的抽象来管理其生命周期。
+
+例如，为了确保数据库只连接一次，你可以将所有数据库设置代码移动到它自己的文件中（例如 `lib/database.js`），然后在应用程序内的任意位置 `导入` 它：
+
+.lib/database.js
+[source, js]
+----
+const knex = require('knex')
+
+const connection = knex({
+  client: 'mysql',
+  connection: {}
+})
+
+module.exports = connection
+----
+
+现在，你可以在任何需要的地方使用 `lib/database.js`，而不需要直接使用 `knex`。
+
+对于单个依赖项来说没问题，但是随着应用程序的增长，你会发现代码库中有许多这样的文件在增长，这并不理想。
+
+=== 依赖管理
+大型代码库面临的最大问题之一是依赖关系的管理。
+
+由于依赖项彼此不了解，开发人员必须以某种方式将它们连接在一起。
+
+让我们以存储在 *redis* 数据库中的 *sessions* 为例：
+
+[source, js]
+----
+class Session {
+  constructor (redis) {
+    // 需要 Redis 实例
+  }
+}
+
+class Redis {
+  constructor (config) {
+    // 需要 Config 实例
+  }
+}
+
+class Config {
+  constructor (configDirectory) {
+    // 需要 config 目录路径
+  }
+}
+----
+
+可以看到，`Session` 类依赖于 `Redis` 类，而 `Redis` 类又依赖于 `Config` 类，以此类推。
+
+当使用 `Session` 类时，我们必须正确地建立它的依赖关系：
+
+[source, js]
+----
+const config = new Config(configDirectory)
+const redis = new Redis(config)
+const session = new Session(redis)
+----
+
+由于依赖项列表可能会根据项目的需求而增加，你可以很快的想象到这个顺序实例化的过程是如何开始失控的！
+
+这便是 IoC 容器发挥作用的地方，它负责帮你解决依赖关系。
+
+=== 痛苦的测试
+当不使用 IoC 容器时，你必须想出不同的方法来模拟依赖关系，或者依赖像 link:http://sinonjs.org/[sinonjs, window="_blank"] 这样的库。
+
+当使用 IoC 容器时，link:testing-fakes#_self_implementing_fakes[创建 fakes] 很简单，因为所有依赖项都是从 IoC 容器解析的，而不是直接从文件系统解析的。
+
+== 绑定依赖
+假设我们希望将 `Redis` 库绑定到 IoC 容器中，确保它知道如何组合自身。
+
+NOTE: IoC 容器其实也没什么神秘。控制模块的组成和解析是一个相对简单的想法，只不过是打开了一个充满可能性的新世界。
+
+第一步是创建实际的 `Redis` 实现，并将所有依赖项定义为 `构造函数` 参数：
+
+[source, js]
+----
+class Redis {
+  constructor (Config) {
+    const redisConfig = Config.get('redis')
+    // 连接到 redis 服务器
+  }
+}
+
+module.exports = Redis
+----
+
+注意：`Config` 是一个构造函数依赖，而不是一个硬编码的 `require` 语句：
+
+接下来，让我们将 `Redis` 类作为 `My/Redis` 绑定到IoC容器上： 
+[source, js]
+----
+const { ioc } = require('@adonisjs/fold')
+const Redis = require('./Redis')
+
+ioc.bind('My/Redis', function (app) {
+  const Config = app.use('Adonis/Src/Config')
+  return new Redis(Config)
+})
+----
+
+然后我们可以像这样使用 `My/Redis` 绑定：
+
+[source, js]
+----
+const redis = ioc.use('My/Redis')
+----
+
+[ol-spaced]
+1. 该 `ioc.bind` 方法有两个参数： +
+  - 绑定的名称（例如 `My/Redis`）。
+  - 每次绑定时都会执行一个 *工厂函数*，返回绑定的最终值。
+2. 由于我们使用的是 IoC 容器，所以我们会提取任何现有的绑定（例如 `Config`），并将其传递给 `Redis` 类
+3. 最后，我们返回一个新的 `Redis` 实例，已配置好并可以使用。
+
+=== 单例模式
+我们刚刚创建的 `My/Redis` 绑定有一个问题：
+
+每次我们从IoC容器中获取它时，它都会返回一个新的 `Redis` 实例，然后创建一个到Redis服务器的新连接。
+
+为了解决这个问题，IoC 容器允许你使用 **单例模式**:
+
+[source, js]
+----
+ioc.singleton('My/Redis', function (app) {
+  const Config = app.use('Adonis/Src/Config')
+  return new Redis(Config)
+})
+----
+
+我们不使用 `ioc.bind`，而是使用 `ioc.singleton` 来缓存它的第一个返回值，并将其重新用于将来的返回。
+
+== 解析依赖
+只需要调用 `ioc.use` 方法并为其指定一个命名空间用于解析即可：
+
+[source, js]
+----
+const redis = ioc.use('My/Redis')
+----
+
+也可以使用全局的 `use` 方法：
+
+[source, js]
+----
+const redis = use('My/Redis')
+----
+
+从 IoC 容器解析依赖时所执行的步骤如下：
+
+1. 寻找已注册的 fake。
+2. 紧接着，找到实际的绑定。
+3. 查找别名，如果找到，使用实际的绑定名称重复该过程。
+4. 解析为自动加载的路径。
+5. 回退到 Node.js 原生的 `require` 方法。
+
+=== 别名
+由于 IoC 容器的绑定必须是唯一的，因此我们使用以下模式来绑定名称: `Project/Scope/Module`.
+
+以 `Adonis/Src/Config` 为例，将其拆解为：
+
+[ul-spaced]
+- `Adonis` 是 **项目** 名称（也可能是你的公司名称）
+- `Src` 是 **Scope（范围）**，因为这个绑定是核心的一部分（对于自己的包，我们使用 `Addon` 关键字）
+- `Config` 是实际的 **模块** 名称
+
+由于有时很难记住并输入完整的命名空间，因此 IoC 容器允许你为它们定义 *别名*。
+
+别名是在 `start/app.js` 文件的 `aliases` 对象中定义的。
+
+NOTE: AdonisJs 预注册了一些模块别名，如 `Route`, `View`, `Model`。但始终都可以覆盖它们，例如：
+
+.start/app.js
+[source, js]
+----
+aliases: {
+  MyRoute: 'Adonis/Src/Route'
+}
+----
+
+[source, js]
+----
+const Route = use('MyRoute')
+----
+
+=== 自动加载
+你还可以定义一个由 IoC 容器自动加载的目录，而不仅仅是将依赖绑定到 IoC 容器上。
+
+*别担心*，它不会从目录中加载所有文件，而是将目录路径视为依赖项解析过程的一部分。
+
+例如, AdonisJs 的 `app` 目录实在 `App` 命名空间下自动加载的，这意味着你可以直接 require（导入）`app` 目录下的所有文件而不用写相对路径。
+
+例如：
+
+.app/Services/Foo.js
+[source, js]
+----
+class FooService {
+}
+
+module.exports = FooService
+----
+
+可以这样导入：
+
+.app/Controllers/Http/UserController.js
+[source, js]
+----
+const Foo = use('App/Services/Foo')
+----
+
+如果没有自动加载，则必须这样导入它： `require('../../Services/Foo')`.
+
+因此，可以将自动加载视为一种可读性和一致性更高的文件导入方式。
+
+此外，你还可以轻松的为它们定义  link:testing-fakes[fakes]。
+
+== 常见问题
+
+[ol-spaced]
+1. *是否需要绑定 IoC 容器内的所有内容？* +
+  不需要，当你想要将 library/module 的设置抽象为它自己的东西时才需要绑定，此外，当你想要分发依赖项并希望它们与 AdonisJs 生态系统配套使用时，应考虑使用 link:service-providers[服务提供者]。
+
+2. *如何模拟绑定？* +
+  因为 AdonisJs 允许你实现 *fakes*，所以不需要模拟绑定，link:testing-fakes[了解更多 fakes 信息]。
+
+3. *如何将npm模块包装为服务提供者？* +
+  link:service-providers[这里] 有完整的指南。

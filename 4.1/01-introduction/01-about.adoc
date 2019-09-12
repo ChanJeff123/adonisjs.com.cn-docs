@@ -1,0 +1,44 @@
+---
+title: 关于 AdonisJs
+permalink: about
+category: 介绍
+---
+
+= 关于 AdonisJs
+
+toc::[]
+
+AdonisJs 是一个可以运行在所有主流操作系统上的 Node.js MVC 框架。它为编写服务端Web应用程序提供了一个稳定的生态系统，因此你可以专注于业务需求，而不是最终确认要使用哪个包。
+
+AdonisJs 使用一致且富有表现力的API来构建全栈Web应用程序或微型API服务，从而让开发者体验更加愉快！
+
+== 起步
+使用 AdonisJs 没有硬性要求，但是最好对 JavaScript、异步编程和 Node.js 有一定程度的了解。
+
+此外，如果你是 JavaScript 新手或不熟悉它在 ES6 中的新特性，我们建议你看
+link:https://goo.gl/ox3uSc[Wes Bos's ES6 course, window="_blank"]。
+
+译者注：国内建议看 link:http://es6.ruanyifeng.com/[ECMAScript 6 入门, window="_blank"]
+
+最后，如果你第一次使用AdonisJs，请务必仔细阅读 link:installation[安装] 指南
+
+== 服务提供者
+AdonisJs 是一个模块化框架，由多个服务提供者组成，它们均为 AdonisJs 应用程序的构建模块
+
+理论上，它们和其他任意npm模块一样，可以在AdonisJs上顺利运行（例如，请求HTTPS请求主体的 link:https://github.com/adonisjs/adonis-bodyparser[BodyParser]，或者是 SQL ORM 的 link:https://github.com/adonisjs/adonis-lucid[Lucid]）
+
+== 常见问题
+以下是一些常见问题列表，如果你没有找到想要的常见问题，请到 link:https://github.com/adonisjs/docs[here] 创建一个issue。
+
+[ol-spaced]
+1. *AdonisJs 与 Express 或 Koa 有什么不同?*
++
+Express 和 Koa 都是路由库，同时在顶部有一层薄薄的中间件。这适用于大多数场景，但是当项目逐渐庞大时，它们特别容易崩溃。
++
+由于你的项目有自己的标准和约定，因此雇佣开发人员处理它们可能会变得更加困难。但是 AdonisJs 遵循一套标准化的约定，所以应该更容易雇人来开发现有的 AdonisJs 应用程序。
+
+2. *AdonisJs 是单体应用程序（monolithic apps）吗?*
++
+不是，AdonisJs 框架是由多个包构成的，可以和应用程序的其余部分优雅的集成到一起。
++
+该框架提供了一个强大的 link:ioc-container[依赖注入层]，所有官方和第三方包都可以利用该层来提供功能，而无需手动连接应用程序的每个部分。

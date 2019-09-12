@@ -1,0 +1,115 @@
+---
+permalink: database-getters-setters
+categories:
+- lucid
+---
+= 访问器 & 修改器
+
+toc::[]
+
+构建数据驱动应用程序的重要步骤之一是控制数据流，Lucid提供了getter和setter，使您更轻松地控制数据流。
+
+我们举一个Post模型的例子，你有一个post的*title* ，当将其显示给最终用户时该标题首字母应该被大写，例如：*getting started with adonis* 应该显示为*Getting Started With Adonis*
+
+有几种方法来实现最终的结果，先来说说`幼稚/天真`的做法
+
+[support-list]
+1. 使用css的`text-transform`属性来实现首字母大写，如果你有JSON API如何实现?
+2. 每当你找到一篇文章，通过修改属性手动大写
+  * 您会在循环中处理20篇帖子？
+  * 如果您将帖子作为给定用户的关系，该怎么办？这意味着循环遍历所有的用户，然后是他们的帖子，并手动变换文章标题。
+
+前面提到的所有处理方法都是不可维护的，最好的方法是，从原点修改标题，以确保无论什么它返回相同的值。
+
+== Getters
+在Lucid中我们针对这种情况定义`getter`，
+In Lucid we define *getters* for such situations. Getters 是在一个特定的属性上进行修饰/改变，而不改变数据库的原始值
+
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class Post extends Lucid {
+
+  getTitle (title) {
+    return title.replace(/^(.)|\s(.)/g, function($1) {
+      return $1.toUpperCase();
+    })
+  }
+
+}
+----
+
+=== 关于Getters
+
+[pretty-list]
+1. 在`get`关键字后面跟上属性名称来定义Getter，例如，`title`属性的getter将被定义为`getTitle`
+2. Getters 是同步执行的，这就意味着你不嗯呢该在他们之间运行异步代码。你必须使用link:database-hooks[钩子] 
+3. Getters将收到给定字段的当前值。
+4. 当你在模型实例或集合上调用`toJSON`方法时，会对`Getter`进行评估/调用
+
+== Setters
+Setter与getter相反，当您将它们设置在模型实例上时，它们会将值更改。例如
+
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+
+  setAccess (access) {
+    return access === 'admin' ? 1 : 0
+  }
+
+}
+
+const user = new User()
+user.access = 'admin'
+
+console.log(user.access) // will return 1
+yield user.save()
+----
+
+=== About Setters
+
+[pretty-list]
+1. 在`set`关键字后面跟上属性名称来定义Setter，例如，`access`属性的setter将被定义为`setAccess`
+2. Setter是同步执行的，这就意味着你不嗯呢该在他们之间运行异步代码。你必须使用link:database-hooks[钩子] 
+3. Setters将收到给定字段的当前值。
+4. 只有在模型实例上设置/更新给定字段的值时，才执行它们。
+
+== Computed Properties // 计算属性
+计算的属性就像getter，但它们是数据库表中不存在的虚拟值
+
+在许多情况下，您可能需要计算属性。例如，使用姓名来计算给定用户的全名
+
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+
+  static get computed () {
+    return ['fullname']
+  }
+
+  getFullname () {
+    return `${this.firstname} ${this.lastname}`
+  }
+
+}
+----
+
+=== About Computed Properties
+
+[pretty-list]
+1. 计算属性必须作为数组从computed的getter 返回。
+2. 计算方法与getters的定义方法一样
+3. 他们接收不对到任何值，因此使用this关键字访问模型实例中的值
+

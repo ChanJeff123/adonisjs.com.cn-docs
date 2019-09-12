@@ -1,0 +1,376 @@
+---
+permalink: request
+categories:
+- 起步
+---
+= 请求
+
+toc::[]
+
+在AdonisJs里, 获得HTTP请求的数据非常容易. 所有的控制器方法和路由闭包都会获得一个`Request`类, 这个类是通过 link:https://nodejs.org/dist/latest-v6.x/docs/api/http.html#http_class_http_server[Node.js HTTP request, window="_blank"] 类进行封装的.
+
+TIP: 如果你想获得Node.js原生的*request*对象, 可以调用`request.request`获得.
+
+== 小例子
+我们来看一个获得请求正文(request body)的小例子:
+
+[source, javascript]
+----
+const Route = use('Route')
+
+Route.get('posts', function * (request, response) {
+  const body = request.all()
+
+  // 选择你想要的字段
+  const body = request.only('title', 'description', 'categories')
+})
+----
+
+== 请求方法
+以下方法都是`request`对象拥有的函数方法.
+
+==== all()
+获得所有的查询参数和请求正文.
+
+[source, javascript]
+----
+const data = request.all()
+----
+
+==== input(key, [defaultValue])
+获得指定的某一个查询参数或请求正文参数, 如果没有找到, 你将会获得默认数据(default value).
+
+[source, javascript]
+----
+const name = request.input('name')
+const subscribe = request.input('subscribe', 'yes')
+----
+
+==== only(...keys)
+获得某几个查询参数或请求正文参数. 如果参数不存在, 你将获得null.
+
+[source, javascript]
+----
+const data = request.only('name', 'email', 'age')
+
+/* returns
+{
+  name: '..',
+  email: '..',
+  age: '..'
+}
+*/
+----
+
+==== except(...keys)
+与 xref:_only_keys[only] 恰恰相反.
+
+[source, javascript]
+----
+const data = request.except('_csrf', 'submit')
+----
+
+==== get
+获得一个序列化后的查询参数.
+
+[source, javascript]
+----
+const data = request.get()
+----
+
+==== post
+获得一个序列化后的请求正文.
+
+[source, javascript]
+----
+const data = request.post()
+----
+
+==== fresh
+通过检测ETag和表头过期时间, 检测这个请求是不是新的.
+
+[source, javascript]
+----
+request.fresh()
+----
+
+==== stale
+和 xref:_fresh[fresh] 恰恰相反.
+
+[source, javascript]
+----
+request.stale()
+----
+
+==== ip
+获得这个请求最真实的IP地址, 如果你的网站使用了反向代理服务器, 比如ginx, 你需要在`config/app.js`文件里面启用`http.trustProxy`选项.
+
+[source, javascript]
+----
+request.ip()
+----
+
+==== ips
+获得一个按照信任度排序的IP地址数组.
+
+[source, javascript]
+----
+request.ips()
+----
+
+==== secure
+检测这个请求有没有启用加密(HTTPS/SSL/TSL).
+
+[source, javascript]
+----
+request.secure()
+----
+
+==== subdomains
+获得请求的子域名部分的链接, 以`api.example.org`为例, 你会获得`['api']`.
+
+[source, javascript]
+----
+request.subdomains()
+----
+
+==== ajax
+检测这个请求是不是一个ajax请求*Ajax(XMLHttpRequest)*
+
+[source, javascript]
+----
+request.ajax()
+----
+
+==== pjax
+link:https://www.google.co.in/search?q=Pjax#q=What+is+Pjax[Pjax, window="_blank"] 是一个混合ajax请求, 如果你是写ruby的, 与之对应的就是 Turbolinks.
+
+==== hostname
+获得请求的主机名.
+
+[source, javascript]
+----
+request.hostname()
+----
+
+==== url
+获得请求的链接. 这个链接的两头将会去除空格(trim).
+
+[source, javascript]
+----
+// url - http://foo.com/users?orderBy=desc&limit=10
+
+request.url()
+
+// returns - http://foo.com/users
+----
+
+==== originalUrl
+
+[source, javascript]
+----
+request.originalUrl()
+----
+
+==== method
+
+[source, javascript]
+----
+request.method()
+----
+
+==== param(key, [defaultValue])
+获得一个指定的查询参数, 更多阅读link:routing#_route_parameters[here].
+
+==== params
+以对象形式获得所有查询参数.
+
+[source, javascript]
+----
+request.params()
+----
+
+==== format
+获得当前访问的格式(内容妥协), 如果你想使用这个方法, 你需要去定义它 link:routing#_content_negotiation_via_routes[route formats]
+
+[source, javascript]
+----
+request.format()
+----
+
+==== match(...keys)
+检测这个链接是不是匹配上了一个你给的表达式(路由表达式/正则表达式).
+
+[source, javascript]
+----
+// url - /user/1
+
+request.match('/users/:id') // true
+request.match('/users/all') // false
+request.match('/users/all', '/user/(.+)') // true
+----
+
+==== hasBody
+检测请求有没有正文.
+
+[source, javascript]
+----
+request.hasBody()
+----
+
+== 请求头
+你可以用以下方法来获得请求头
+
+==== header(key, [defaultValue])
+获得一个指定的请求头数据, 如果没有就会返回默认数据.
+
+[source, javascript]
+----
+const csrfToken = request.header('CSRF-TOKEN')
+// 或
+const time = request.header('x-time', new Date().getTime())
+----
+
+==== headers
+以对象形式获得所有请求头数据
+
+[source, javascript]
+----
+request.headers()
+----
+
+== 请求集合
+有时候你需要处理多入口数据(数组数据), 看看这个小例子:
+
+[source, html]
+----
+<form method="POST" action="/users">
+  <div class="row">
+    <h2> User 1 </h2>
+    <input type="email" name="email[]" />
+    <input type="password" name="password[]" />
+  </div>
+
+  <div class="row">
+    <h2> User 2 </h2>
+    <input type="email" name="email[]" />
+    <input type="password" name="password[]" />
+  </div>
+
+  <button type="submit"> Create Users </button>
+</form>
+----
+
+在上面, 我们定义了`email[]`和`password[]`数组, 让我们可以要提交多个用户, 服务器上会获得以下格式的内容.
+
+.你得到的是这样
+[source, javascript]
+----
+{
+  email: ['bar@foo.com', 'baz@foo.com'],
+  password: ['secret', 'secret1']
+}
+----
+
+到了这一步, 其实表单的设计是正确的, 不过获得的数据很难看懂.
+
+.其实我们所期待的是这样
+[source, javascript]
+----
+[
+  {
+    email: 'bar@foo.com',
+    password: 'secret'
+  },
+  {
+    email: 'baz@foo.com',
+    password: 'secret1'
+  }
+]
+----
+
+当然你可以用循环来生成你想要的格式, 不过太蛋疼, 于是我们提供了一个`collect`方法来解决这个问题.
+
+==== collect(...keys)
+[source, javascript]
+----
+const users = request.collect('email', 'password')
+const savedUsers = yield User.createMany(users)
+----
+
+== 内容妥协
+内容妥协是让服务器知道怎么选择一个最好的返回数据类型, 用户可以在header里面设置内容妥协来告诉服务器.
+
+TIP: 你也可以用路由来定义你想要的返回类型, 看看这个吧 link:routing#_content_negotiation_via_routes[content negotiation via routes]
+
+==== is(...keys)
+检测请求是不是想要指定内容类型.
+
+[source, javascript]
+----
+const isPlain = request.is('html', 'plain')
+----
+
+==== accepts(...keys)
+检测请求头里面的`Accept`字段, 以此选择最好的返回类型.
+
+[source, javascript]
+----
+const type = request.accepts('json', 'html')
+
+switch (type) {
+  case 'json':
+    response.json({hello:"world"})
+    break
+  case 'html':
+    response.send('<h1>Hello world</h1>')
+    break
+}
+----
+
+== 扩展请求
+很可能你需要扩展请求类的原型方法, 从而添加新的方法, 一般情况下你可以定义一个宏来实现.
+
+==== 程序独有的
+如果你的宏是你自己程序独有的, 你可以配置`app/Listeners/Http.js`文件去监听*start*事件, 来添加自定义宏.
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.onStart = function () {
+  const Request = use('Adonis/Src/Request')
+  Request.macro('cartValue', function () {
+    return this.cookie('cartValue', 0)
+  })
+}
+----
+
+==== 通过服务提供者(Provider)
+如果你想写一个AdonisJs的模块和插件, 你可以在你的服务提供者(Service Provider)的`boot`方法里面添加一个宏.
+
+[source, javascript]
+----
+const ServiceProvider = require('adonis-fold').ServiceProvider
+
+class MyServiceProvider extends ServiceProvider {
+
+  boot () {
+    const Request = use('Adonis/Src/Request')
+    Request.macro('cartValue', function () {
+      return this.cookie('cartValue', 0)
+    })
+  }
+
+  * register () {
+    // register bindings
+  }
+
+}
+----
+
+你可以像使用其他`request`方法一样使用你定义的宏.
+
+[source, javascript]
+----
+const cartValue = request.cartValue()
+----

@@ -1,0 +1,127 @@
+---
+title: 目录结构
+category: 起步
+permalink: folder-structure
+---
+
+= 目录结构
+
+toc::[]
+
+乍一看，AdonisJs 的目录结构可能会让人感到无所适从，因为有些预先配置的目录。
+
+渐渐地，您将了解到将实体分为多个目录的好处，可保持代码可维护性同时易于搜索。
+
+标准的 AdonisJs 安装如下所示：
+++++
+<pre class="highlight line-numbers language-bash" data-line="2,5">
+<code>.
+├── app/
+  ├── ...
+├── config/
+  ├── app.js
+  ├── auth.js
+  └── ...
+├── database/
+  ├── migrations/
+  ├── seeds/
+  └── factory.js
+├── public/
+├── resources/
+  ├── ...
+  └── views/
+├── storage/
+├── start/
+  ├── app.js
+  ├── kernel.js
+  └── routes.js
+├── test/
+├── ace
+├── server.js
+└── package.json
+</code>
+</pre>
+++++
+
+== 根目录
+
+=== app
+
+`app` 是应用程序逻辑的主目录。
+
+它在命名空间 `App` 下自动加载。
+
+=== config
+
+`config` 目录用于定义应用程序的配置
+
+AdonisJs 附带了许多配置文件，但你也可以随意创建自己的配置文件。
+
+link:configuration-and-env[了解更多配置信息].
+
+=== database
+
+`database` 目录用于存储所有与数据库相关的文件。
+
+link:database[了解更多数据库信息].
+
+=== public
+
+`public` 目录用于通过 HTTP 提供静态资源服务。
+
+该目录映射到你的网站根目录：
+
+[source, html]
+----
+<!-- actual file is stored in /public/style.css -->
+<link rel="stylesheet" href="/style.css" />
+----
+
+=== resources
+
+`resources` 目录用于存储应用程序的展示文件，如 视图模板、LESS/SASS 文件、未编译的JavaScript 和图片等。
+
+=== start
+
+`start` 目录用于存储应用程序启动时加载的文件。默认情况下，你会找到 `app.js`, `kernel.js` 和 `routes.js`。
+
+=== test
+
+`test` 目录用于存储所有应用程序测试。默认情况下不包含测试包，你可以按照 link:testing[说明] 安装它。
+
+== 应用目录
+
+=== app/Commands
+
+`app/Commands` 目录用于存储所有 CLI 命令。
+运行 `adonis make:command <name>` 时会自动创建此目录。
+
+=== app/Controllers
+
+`app/Controllers` 目录用于存储所有的 `Http` 和 `WebSocket` 控制器。
+运行 `adonis make:controller <name>` 时会自动创建此目录。
+
+=== app/Exceptions
+
+`app/Exceptions` 目录用于存储所有全局异常处理程序和所有自定义异常。
+运行 `adonis make:ehandler` 或 `adonis make:exception <name>` 会自动创建此目录。
+
+=== app/Listeners
+
+`app/Listeners` 目录用于存储所有事件监听器。
+运行 `adonis make:listener <name>` 会自动创建此目录。
+
+=== app/Middleware
+
+`app/Middleware` 目录用于存储所有中间件。
+运行 `adonis make:middleware <name>` 会自动创建此目录。
+
+=== app/Models
+
+`app/Models` 目录用于存储所有模型。
+运行 `adonis make:model <name>` 会自动创建此目录。
+
+=== app/Validators
+
+`app/Validators` 目录用于存储所有路由验证器。
+运行 `adonis make:validator <name>` 会自动创建此目录（你需要安装 link:validator[Validator Provider] 才能使用此命令）。

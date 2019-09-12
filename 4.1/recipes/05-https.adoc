@@ -1,0 +1,64 @@
+---
+permalink: using-https
+title: 使用 Https
+category: recipes
+---
+toc::[]
+
+Node.js 的 HTTPs 服务器可以与 AdonisJs 一同使用。如下所示，其思想是在 `server.js` 文件中使用 Node.js 的 `https` 模块。 +
+&nbsp;
+[source, js]
+----
+const { Ignitor } = require('@adonisjs/ignitor')
+const path = require('path')
+const https = require('https')
+const fs = require('fs')
+
+// 证书
+const options = {
+  key: fs.readFileSync(path.join(__dirname, './server.key')),
+  cert: fs.readFileSync(path.join(__dirname, './server.crt'))
+}
+
+new Ignitor(require('@adonisjs/fold'))
+  .appRoot(__dirname)
+  .fireHttpServer((handler) => {
+    return https.createServer(options, handler)
+  })
+  .catch(console.error)
+----
+
+真正的工作发生在 `fireHttpServer` 方法内部。该函数接收一个参数作为回调，并且返回值必须是 Node.js 服务器的实例。
+
+== 自签名证书
+在开发过程中，你可以使用自签名证书，它需要来自 npm 的额外依赖.
+
+[source, bash]
+----
+npm i pem
+----
+
+[source, js]
+----
+const { Ignitor } = require('@adonisjs/ignitor')
+const https = require('https')
+const pem = require('pem')
+
+pem.createCertificate({ days: 1, selfSigned: true }, (error, keys) => {
+  if (error) {
+    return console.log(error)
+  }
+
+  const options = {
+    key: keys.serviceKey,
+    cert: keys.certificate
+  }
+
+  new Ignitor(require('@adonisjs/fold'))
+    .appRoot(__dirname)
+    .fireHttpServer((handler) => {
+      return https.createServer(options, handler)
+    })
+    .catch(console.error)
+})
+----

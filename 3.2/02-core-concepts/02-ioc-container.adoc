@@ -1,0 +1,170 @@
+---
+permalink: ioc-container
+categories:
+- 核心概念
+---
+= IoC容器和服务提供者
+
+toc::[]
+
+本文档介绍了AdonisJs中控制反转（Inversion of Control（IoC））容器的概念和用法。这个概念是：在*容器*中存储、绑定依赖关系，然后从容器中取回它们，而不是手动请求它们。这种方法的好处是：
+
+[pretty-list]
+1. 一个对象的配置是对于最终用户（end-user）来说是不可见的，这样可以提供简单明了的API。
+2. 直接支持*依赖注入（DI）*，因为所有对象都是从同一个真实的来源获取的。
+3. 易于编写第三方模块和插件，因为您可以从*IoC容器*获取依赖项，而不是让最终用户手动传递它们。
+（译者注：“最终用户”在此是指代码的调用方，而非访问网站的真实用户。）
+
+== 基本例子
+我们来看一下简单的绑定依赖关系到IoC容器的例子，然后再使用它们。在整个过程中，您将会了解到很多新的术语和方法。
+
+.绑定依赖关系
+[source, javascript]
+----
+const Ioc = require('adonis-fold').Ioc
+const bugsnag = require('bugsnag')
+
+Ioc.bind('Adonis/Src/Bugsnag', function (app) { <1>
+
+  const Config = app.use('Adonis/Src/Config') <2>
+  const bugSnagConfig = Config.get('services.bugsnag') <3>
+
+  bugsnag.register(bugSnagConfig.apiKey, bugSnagConfig.options) <4>
+  return bugsnag <5>
+
+})
+----
+
+<1> 我们首先将对象绑定到IoC容器。在这种情况下，每个绑定都需要一个唯一的命名空间，即 `Adonis/Src/Bugsnag`
+<2> 由于我们可以访问闭包中的`Ioc`容器，所以我们可以获取*Config*绑定。
+<3> 接下来我们取出保存在`config/services.js`文件中的`bugsnag`配置数据。
+<4> 使用配置选项，我们使用bugsnag注册`apiKey` 。
+<5> 最后我们返回`bugsnag`对象，可以用来报告错误。
+
+
+为了使用*Bugsnag*绑定，我们可以利用全局`use`方法。
+[source, javascript]
+----
+const Bugsnag = use('Adonis/Src/Bugsnag')
+Bugsnag.notify(new Error('Something went wrong'))
+----
+
+在IoC容器的帮助下，我们可以抽象出Bugsnag的设置过程，并为最终用户提供了极好的API。
+
+== 可用的方法
+以下是IoC容器暴露的可用方法的列表。
+
+==== use(完整类名/别名)
+使用*命名空间*或*别名*获取绑定。
+
+[source, javascript]
+----
+const Redis = use('Redis')
+----
+
+==== make(完整类名/别名/类)
+通过自动注入构造函数依赖关系返回类的实例。
+
+[source, javascript]
+----
+class Book {
+
+  static get inject () { <1>
+    return ['App/Model/Book', 'Adonis/Addons/Mail']
+  }
+
+  constructor (BookModel, Mail) { <2>
+    this.BookModel = BookModel
+    this.Mail = Mail
+  }
+
+}
+
+const bookInstance = make(Book) <3>
+----
+
+
+<1> 静态getter`inject`返回一个依赖关系的数组，以便按顺序注入。
+<2> 所有指定的依赖项都注入到构造函数中。
+<3> 最后，我们利用`make`方法创建一个`Book`类的实例，它将自动注入定义的依赖关系。
+
+
+==== alias(名称, 完整类名)
+Define alias for a given namespace.
+
+[source, javascript]
+----
+const Ioc = require('adonis-fold').Ioc
+Ioc.alias('UserModel', 'App/Model/User')
+----
+
+== 服务提供者
+到目前为止，我们已经使用`bind`方法手动将依赖关系绑定到IoC容器，但是我们不确定在哪里编写这个代码以及如何建立绑定。服务提供商提供了一个友好的接口来*注册*到IoC容器的绑定。
+
+NOTE: 始终确保为您的绑定提供唯一的名称。例如：Adonis使用 `Adonis/Src/<ModuleName>`作为核心绑定， `Adonis/Addons/<ModuleName>` 用于第一方加载项。考虑使用您公司名称的后缀。
+
+服务提供者是一个`ES2015`类，它支持两种方法来注册绑定和引导提供者的初始状态。例如：
+
+[source, javascript]
+----
+const ServiceProvider = require('adonis-fold').ServiceProvider
+
+class BugSnagProvider extends ServiceProvider {
+
+  * register () { <1>
+    this.app.bind('Adonis/Addons/BugSnag', (app) => {
+      const BugSnag = require('./BugSnag')
+      const Config = app.use('Adonis/Src/Config')
+      return new BugSnag(Config)
+    })
+  }
+
+  * boot () { <2>
+    //所有绑定注册完毕，可以做点其他的
+  }
+
+}
+----
+
+<1> `register`方法用于注册绑定到IoC容器。此外，您可以使用其*命名空间*来使用IoC容器中的其他绑定。
+<2> 当所有提供程序都已注册时，将调用`boot`方法，这意味着您可以在此方法中执行一些重要操作来启动提供程序。此外，不是每个提供商都需要此方法，只有在您的提供程序需要启动时才执行此方法。
+
+== 事件
+以下是IoC容器触发的事件列表。
+
+[source, javascript]
+----
+const Ioc = require('adonis-fold').Ioc
+
+Ioc.on('bind:provider', (namespace, isSingleton) => {
+  // 绑定注册完毕
+})
+
+Ioc.on('provider:resolved', (namespace, returnValue) => {
+  // 绑定解析完毕
+})
+
+Ioc.on('module:resolved', (namespace, fromPath, returnValue) => {
+  // 自动加载模块解析完毕
+})
+
+Ioc.on('extend:provider', (key, namespace) => {
+  // 加载提供者
+})
+
+Ioc.on('bind:autoload', (namespace, directoryPath) => {
+  // 自动加载的命名空间和文件路径定义完成
+})
+
+Ioc.on('bind:alias', (alias, namespace) => {
+  // 别名注册完成
+})
+
+Ioc.on('providers:registered', () => {
+  // 所有提供者注册（register）完成
+})
+
+Ioc.on('providers:booted', () => {
+  // 所有提供者引导（boot）完成
+})
+----

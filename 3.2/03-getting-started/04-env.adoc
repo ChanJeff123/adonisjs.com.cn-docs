@@ -1,0 +1,78 @@
+---
+permalink: env
+categories:
+- 起步
+---
+= 环境变量
+
+toc::[]
+
+我们都在开发环境中编写应用程序，并将它们部署在我们服务器上的生产环境中。现在不但在开发或生产环境中改变了运行条件或操作系统，而且改变了其他一些事情。例如：
+
+1. 在开发环境中，您将使用您的个人电子邮件发送电子邮件，而在生产中您可以使用公司电子邮件，而他们都有适用于自己的第三方服务API密钥。
+2. 在开发期间，您可能不想缓存视图，而在生产视图中，缓存是性能必要的。
+
+处理环境切换的复杂性有几种方法：
+
+=== 不推荐
+[support-list]
+1. 在您的应用程序中添加`if/else`子句并检查当前的env，然后再执行该操作。
+2. 为每个环境创建多个`configuration`文件副本
+
+=== 解决方法
+为了克服这个问题，AdonisJs利用了在bash脚本中非常常见且被不同社区的现代框架所使用的link:https://en.wikipedia.org/wiki/Env[环境变量, window="_blank"],现在也。
+
+== （.env）文件
+有一个`.env`文件在每一个新AdonisJs项目的根目录内。此文件的目的是保留所有配置变量，这些变量可以在不同环境中进行更改，以下是默认的.env文件。
+
+.(.env)
+[source]
+----
+HOST=localhost
+PORT=3333
+APP_KEY=n96M1TPG821EdN4mMIjnGKxGytx9W2UJ
+NODE_ENV=development
+CACHE_VIEWS=false
+SESSION_DRIVER=cookie
+----
+
+该文件在引导HTTP服务器或运行Ace命令时自动加载。您可以在`Env`提供者的帮助下从该文件读取值，或使用Node.js `process.env`全局访问它们。
+
+== 读/写 值
+来自此文件的值可以通过`process.env`或使用内置的Env提供程序访问，理想情况下，建议您使用*Env提供商*，因为它可能会处理一些不一致的问题。
+
+==== get(value, [defaultValue])
+`get` 方法用来读取配置值，他也可以接受一个可选项的`defaultValue`的默认值, 当实际值为`undefined` 或 `null`时返回默认值。
+
+
+[source, javascript]
+----
+const Env = use('Env')
+Env.get('NODE_ENV', 'development')
+----
+
+==== set(key, value)
+`set` 方法将更新现有的配置的键的值，如果它不存在，将会创建新的键值对。
+
+[source, javascript]
+----
+const Env = use('Env')
+Env.set('NODE_ENV', 'production')
+----
+
+NOTE: 如果在应用程序的某个部分读取它们之后更新环境变量没有任何效果。建议在启动HTTP服务器时通过命令行覆盖env变量。例如： `PORT=8000 npm start`.
+
+== 文件位置
+AdonisJs将从您的项目根目录加载`.env`文件。您可以通过在启动服务器时定义不同的路径来覆盖文件的位置。
+
+[source, bash]
+----
+ENV_PATH=/etc/config/.env npm start
+----
+
+有时您可以使用主机提供商仪表板设置env变量,在这种情况下，.env文件没有任何意义，忽略Env提供程序错误，您必须启动服务器`ENV_SILENT`。
+
+[source, bash]
+----
+ENV_SILENT=true npm start
+----

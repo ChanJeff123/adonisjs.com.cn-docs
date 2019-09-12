@@ -1,0 +1,168 @@
+---
+permalink: frontend-assets
+title: 前端资源管理
+category: recipes
+---
+= 前端资源管理
+
+toc::[]
+
+AdonisJs 不做任何假设，也没有提供如何打包前端资源的相关工具。该框架的目的仅仅是为后端应用程序提供一个高效的工作流。
+
+然而，在本文中，我们将讨论一些如何管理和打包前端代码的方法。
+
+== Webpack
+前端生态系统中的构建工具实在太多了，很容易让人无所适从。然而，link:https://webpack.js.org/concepts/[webpack, window="_blank"] *（截至目前）* 确实能够很好的管理所有内容，并且是许多开发者的主流选择。
+
+让我们看看如何存储你的资源和打包它们吧。
+
+=== 目录结构
+[source, bash]
+----
+└── resources
+    └── assets
+        └── sass
+        └── scripts
+        └── images
+----
+
+我们应该将所有 `源码资源` 保存在 `resources` 目录中。Adonis 已使用该目录来存储视图。
+
+该目录编译的所有资源都将放到 `public` 目录中。
+
+=== Webpack 基础配置
+首先，请确保将 webpack 安装为开发依赖项，同时创建了配置文件。
+
+[source, bash]
+----
+npm i --save-dev webpack webpack-cli
+
+touch webpack.config.js
+----
+
+.webpack.config.js
+[source, js]
+----
+module.exports = {
+}
+----
+
+运行 `./node_modules/.bin/webpack` 来构建你的文件。
+
+- 使用 `--mode` 标记来切换生产和开发环境。
+- 要启用监听，请使用 `--watch` 标记。
+
+示例：
+[source, bash]
+----
+./node_modules/.bin/webpack --mode development
+----
+
+== Sass 设置
+
+[source, bash]
+----
+npm i --save-dev style-loader css-loader extract-text-webpack-plugin@next node-sass sass-loader
+----
+
+将以下代码添加到你的 webpack.config.js 文件中。
+
+[source, js]
+----
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+
+const extractSass = new ExtractTextPlugin({
+  filename: 'public/app.css'
+})
+
+function sassRules () {
+  return [
+    {
+      test: /\.(sass|scss)$/,
+      use: ExtractTextPlugin.extract(
+        {
+          fallback: 'style-loader',
+          use: ['css-loader', 'sass-loader']
+        })
+    }
+  ]
+}
+
+module.exports = {
+  entry: [
+    './resources/assets/sass/app.scss'
+  ],
+  output: {
+    filename: 'public/app.js'
+  },
+  module: {
+    rules: sassRules()
+  },
+  plugins: [
+    extractSass
+  ]
+}
+----
+
+这里我们使用 `sass-loader` 和一些其他相关依赖性来编译 `resources/assets/sass/app.scss -> public/app.css`.
+
+需要来自 `edge` 模板的 css 文件。
+
+[source, edge]
+----
+<head>
+  {{ style('/public/app') }}
+</head>
+----
+
+
+== 脚本设置
+脚本设置的目的是要将前端 JavaScript 打包到单个文件中。我假设你希望将代码为 ES5 以便面向所有浏览器。
+
+NOTE: 我们使用 babel 进行 ES6 到 ES5 的转换。此外，*AdonisJs 本身不需要babel*，它只适用于你为浏览器编写的JavaScript。
+
+[source, bash]
+----
+npm i --save-dev babel-loader @babel/core @babel/preset-env
+----
+
+[source, js]
+----
+function scriptRules () {
+  return [
+    {
+      test: /\.js$/,
+      exclude: [/node_modules/],
+      loader: 'babel-loader',
+      options: { presets: ['env'] }
+    }
+  ]
+}
+
+module.exports = {
+  entry: [
+    './resources/assets/sass/app.scss',
+    './resources/assets/scripts/app.js'
+  ],
+  output: {
+    filename: 'public/app.js'
+  },
+  module: {
+    rules: sassRules().concat(scriptRules())
+  },
+  plugins: [
+    extractSass
+  ]
+}
+----
+
+这次我们编译 `resources/assets/scripts/app.js -> public/app.js`
+
+需要来自 `edge` 模板的 js 文件。
+
+[source, edge]
+----
+<head>
+  {{ script('/public/app') }}
+</head>
+----

@@ -1,0 +1,609 @@
+---
+permalink: authentication
+categories:
+- web 开发工具类
+---
+= 认证
+
+toc::[]
+
+每个Web应用程序在某个阶段都处理用户管理和认证。 AdonisJs提供了一个功能齐全的身份验证系统，可以使用多个身份验证器来验证HTTP请求。 使用身份验证器，您可以构建传统的基于 *会话* 的登录系统来保护 *REST API* 。
+
+== 验证器
+每个认证器是序列化和认证方案的组合。
+
+=== 方案
+[support-list]
+* Sessions (session)
+* Basic Auth (basic)
+* JWT (jwt)
+* Personal API Tokens (api)
+
+=== 序列化
+[support-list]
+* Lucid
+* Database
+
+== 关于认证
+[pretty-list]
+
+1. 认证分为 *有状态认证* 和 *无状态认证* 两大类。
+2.考虑到基于会话的身份验证 *状态身份验证* ，因为一旦登录用户可以导航到应用程序的不同区域，而不重新发送凭据。
+3. *无状态身份验证* 要求最终用户在每个HTTP请求上发送凭证，这与REST API非常相似。
+4. AdonisJs提供所需的工具和帮助，轻松管理这两种类型的身份验证。
+5. 验证提供商将使用以下link:encryption-and-hashing#_hashing_values[哈希]模块来验证密码。
+确保link:database-hooks#_basic_example[哈希你的密码]，然后将其保存到数据库。
+
+== 配置
+用于认证的配置保存在 `config/auth.js` 文件中。 默认情况下，它使用 `会话` 认证器认证请求。
+
+[source, javascript]
+----
+module.exports = {
+  authenticator: 'session',
+  session: {
+    serializer: 'Lucid',
+    scheme: 'session',
+    model: 'App/Model/User',
+    uid: 'email',
+    password: 'password'
+  }
+}
+----
+
+[options="header"]
+|====
+| Key | Values | Description
+| serializer | Lucid, Database | Serializer to be used for fetching the user from the database.
+| scheme | session, basic, jwt, api | Scheme to be used for fetching and authenticating user credentials.
+| uid | Database field name | Database field to be used as unique identifier for a given user.
+| password | Database field name | Field to be used for verifying user password
+| model | Model Namespace *(Lucid Only)* | Applicable only when using Lucid serializer. Given model will be used for querying the database.
+| table | Database table name *(Database Only)* | Applicable only when using Database serializer.
+|====
+
+== 迁移 & 模型
+身份验证提供程序可以使用 *ace命令* 为您生成所需的迁移。 只需确保将以下命令添加到命令列表中。
+
+.bootstrap/app.js
+[source, javascript]
+----
+const commands = [
+  // ...,
+  'Adonis/Commands/Auth:Setup'
+]
+----
+
+.运行 Setup 命令
+[source, bash]
+----
+./ace auth:setup
+----
+
+.输出
+[source, bash]
+----
+create: app/Model/User.js
+create: database/migrations/1463212428511_User.js
+create: app/Model/Token.js
+create: database/migrations/1463212428512_Token.js
+----
+
+== 基本例子
+我们先从创建一个简单的应用程序到 *login* 并显示登录用户的配置文件的基本示例开始。
+
+.app/Http/routes.js
+[source, javascript]
+----
+'use strict'
+
+const Route = use('Route')
+
+Route.get('profile', 'UsersController.profile')
+Route.post('login', 'UsersController.login')
+----
+
+.app/Http/Controllers/UsersController.js
+[source, javascript]
+----
+'use strict'
+
+class UsersController {
+
+  * login (request, response) {
+    const email = request.input('email')
+    const password = request.input('password')
+    const login = yield request.auth.attempt(email, password) <1>
+
+    if (login) {
+      response.send('Logged In Successfully')
+      return
+    }
+
+    response.unauthorized('Invalid credentails')
+  }
+
+}
+----
+
+<1> 一旦配置了 *authentication provider* ，就可以使用 `request` 实例上的 `auth` 属性来验证用户或检查身份验证状态。
+
+让我们写另一种方法只有当他们登录时就来显示用户信息。
+
+.Showing User Profile
+[source, javascript]
+----
+* profile (request, response) {
+  const user = yield request.auth.getUser()
+  if (user) {
+    response.ok(user)
+    return
+  }
+  response.unauthorized('You must login to view your profile')
+}
+----
+
+== 基于会话的认证
+以下是列表的方法可以使用 `会话` 认证器。
+
+==== attempt(uid, password)
+尝试登录用户使用UID和密码。如果找不到用户或密码不匹配，将抛出错误。
+
+[source, javascript]
+----
+try {
+  yield request.auth.attempt(uid, password)
+} catch (e) {
+  yield request.with({error: e.message}).flash()
+  response.redirect('back')
+}
+----
+
+==== login(user)
+使用用户模型实例登录用户。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+try {
+  yield request.auth.login(user)
+  response.redirect('/dashboard')
+} catch (e) {
+  yield request.with({error: e.message}).flash()
+  response.redirect('back')
+}
+----
+
+==== loginViaId(id)
+登录用户使用ID。将执行数据库查找以确保用户确实存在，否则将抛出异常。
+
+[source, javascript]
+----
+try {
+  yield request.auth.loginViaId(1)
+  response.redirect('/dashboard')
+} catch (e) {
+  yield request.with({error: e.message}).flash()
+  response.redirect('back')
+}
+----
+
+==== logout
+注销现有的登录用户。
+
+[source, javascript]
+----
+yield request.auth.logout()
+----
+
+==== check
+检查用户是否登录。
+
+[source, javascript]
+----
+const isLoggedIn = yield request.auth.check()
+if (!isLoggedIn) {
+  response.redirect('/login')
+}
+----
+
+==== validate(uid, password)
+验证用户uid和密码查看它们是否有效。此方法将并不会设置任何 session / cookie。
+
+[source, javascript]
+----
+try {
+  yield request.auth.validate(uid, password)
+} catch (e) {
+  yield request.with({error: e.message}).flash()
+  response.redirect('back')
+}
+----
+
+== 基本认证
+以下是可*基本认证*认证方法列表。
+
+注：基本身份验证凭据Base64编码和发送 *Authorization* 请求头。例如：`Authorization=username:password`
+
+==== check
+看看基本认证证书是目前在 `Authorization` 头。
+
+[source, javascript]
+----
+const isLoggedIn = yield request.auth.check()
+if (!isLoggedIn) {
+  response.redirect('/login')
+}
+----
+
+==== validate(uid, password)
+验证用户凭据以查看它们是否有效。
+
+[source, javascript]
+----
+try {
+  yield request.auth.validate(uid, password)
+} catch (e) {
+  response.unauthorized({error: e.message})
+}
+----
+
+== JWT
+JWT的验证器需要一些额外的属性来配置。
+
+
+注：JWT是发送 *Authorization* 请求头。例如：`Authorization=Bearer JWT_TOKEN`
+
+.config/auth.js
+[source, javascript]
+----
+{
+  authenticator: 'jwt',
+  jwt: {
+    serializer: 'Lucid',
+    scheme: 'jwt',
+    model: 'App/Model/User',
+    secret: Config.get('app.appKey'),
+    options: {
+      // Options to be used while generating token
+    }
+  }
+}
+----
+
+.附加选项
+
+[options="header"]
+|====
+| Key | Available Values | Default Value | Description
+| algorithm | HS256, HS384 | HS256 | Algorithm to be used for generating token
+| expiresIn | valid time in seconds or link:https://github.com/rauchg/ms.js[ms string] | null |  When to expire the token
+| notBefore | valid time in seconds or link:https://github.com/rauchg/ms.js[ms string] | null | Till when at least to keep the token valid
+| audience |  String | null  | A value to be checked against the `aud`
+| issuer |  Array or String | null | Value to be used for `iss`.
+| subject | String | null | A value to be checked against the `sub`.
+|====
+
+==== check
+和session一样检查是否登录。
+
+[source, javascript]
+----
+const isLoggedIn = yield request.auth.check()
+if (!isLoggedIn) {
+  response.unauthorized({error: 'Your must be loggedin to access this resource.'})
+}
+----
+
+==== generate(user)
+对于一个给定的用户生成一个JWT。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const token = yield request.auth.generate(user)
+----
+
+==== validate(uid, password)
+验证用户凭据以查看它们是否有效。
+
+[source, javascript]
+----
+try {
+  yield request.auth.validate(uid, password)
+} catch (e) {
+  response.unauthorized({error: e.message})
+}
+----
+
+==== attempt(uid, password)
+验证用户凭据是否有效，有效则生成一个JWT。
+
+[source, javascript]
+----
+try {
+  const token = yield request.auth.attempt(uid, password)
+} catch (e) {
+  response.unauthorized({error: e.message})
+}
+----
+
+== API Token
+个人API令牌就像一个给定帐户的密码。大多数的Web应用程序提供基于API的认证，使他们的客户可以生成这些令牌的开发人员没有分享他们的实际登录细节。
+
+NOTE: API Token被发送了 *Authorization* 的请求头。例如：`Authorization=Bearer API_TOKEN`
+
+[pretty-list]
+1. API tokens 保存到对应于给定用户的数据库中。
+2. 您可以为令牌设置过期或为过期令牌设置 `null` 。
+3. 您可以为给定用户撤销单个或者全部令牌。
+
+.config/auth.js
+[source, javascript]
+----
+authenticator: 'api',
+api: {
+  serializer: 'Lucid',
+  scheme: 'api',
+  model: 'App/Model/Token',
+  expiry: '30d'
+}
+----
+
+=== 建立令牌/用户关系
+`Token` 模型需要与 `User` 模型建立关系然后轻松保存令牌。确保定义两个模型之间的关系。
+
+提示：利用  `auth:setup` 命令生成模型/迁移并建立的关系。
+
+.app/Model/Token.js
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class Token extends Lucid {
+  user () {
+    return this.belongsTo('App/Model/User')
+  }
+}
+----
+
+.app/Model/User.js
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+  apiTokens () {
+    return this.hasMany('App/Model/Token')
+  }
+}
+----
+
+=== Methods
+以下是可用方法列表是使用 `API` 验证器。
+
+==== check
+认证是否登录
+
+[source, javascript]
+----
+const isLoggedIn = yield request.auth.check()
+----
+
+==== generate(user, [expiry])
+为给定用户生成API令牌并将其保存到数据库中。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const token = yield request.auth.generate(user)
+----
+
+==== revoke(user, tokens=Array)
+为给定用户撤销/删除给定的令牌。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+yield request.auth.revoke(user, [token])
+----
+
+==== revokeAll(user)
+撤销/删除给定用户的所有令牌。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+yield request.auth.revokeAll(user)
+----
+
+==== revokeExcept(user, tokens=Array)
+撤销除给定的所有令牌。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+yield request.auth.revokeExcept(user, [token])
+----
+
+== 完全路由
+到目前为止，您已经手动验证用户，这可能导致重复代码在多个控制器。Adonisjs认证中间件可以自动验证路由，并确保在最终用户未登录时拒绝请求。
+
+确保 *Auth Middleware* 在 `app / Http / kernel.js` 文件中注册为一个命名的中间件。
+
+.app/Http/kernel.js
+[source, javascript]
+----
+const namedMiddleware = {
+  auth: 'Adonis/Middleware/Auth'
+}
+----
+
+现在你们可以在你的路由上使用 `auth` 的中间件。
+
+.app/Http/routes.js
+[source, javascript]
+----
+Route
+  .get('users/profile', 'UsersController.profile')
+  .middleware('auth')
+----
+
+此外，您可以通过在参数运行时将参数传递给认证中间件来定义不同的认证器。
+
+[source, javascript]
+----
+Route
+  .get('users/profile', 'UsersController.profile')
+  .middleware('auth:basic')
+----
+
+== 在认证器之间切换
+您也可以使用 `authentator` 方法在不同的认证器之间切换。
+
+[source, javascript]
+----
+const jwt = request.auth.authenticator('jwt')
+const basicAuth = request.auth.authenticator('basic')
+const api = request.auth.authenticator('api')
+
+yield jwt.check()
+yield basicAuth.check()
+yield api.check()
+----
+
+== Helpers
+`Helpers` 可以在HTTP请求期间更轻松地检索当前登录的用户。
+
+=== 基于会话
+当最终用户通过 `session` 认证器登录时，您可以访问请求对象上的 `currentUser` 属性，并将视图中的全局内容访问。
+
+[source, javascript]
+----
+request.currentUser // logged in user
+----
+
+[source, twig]
+----
+{{ currentUser }}
+----
+
+=== 所有其他认证器
+比如 *JWT* ，*Basic Auth* 和 *API Token* 的所有其他身份验证器将可以访问当前登录的用户作为请求对象上的 `authUser` 属性。
+
+[source, javascript]
+----
+request.authUser // authenticated user instance
+----
+
+== 扩展认证提供者
+通过添加新的 *serializer* 或 *scheme* 来扩展是相当简单的。 重要的一步是了解两者的必要性。
+
+.bootstrap/extend.js
+[source, javascript]
+----
+Ioc.extend('Adonis/Src/AuthManager', 'mongo', function (app) {
+  return new MongoSerializer()
+}, 'serializer')
+
+// Or
+
+Ioc.extend('Adonis/Src/AuthManager', 'fingerprint', function (app) {
+  // adonis will initiate the scheme itself for each request.
+  return FingerPrint
+}, 'scheme')
+----
+
+=== 序列化
+序列化器用于使用其唯一标识符从数据存储区序列化/获取用户。 还有序列化器是用来验证用户密码的。
+
+[source, javascript]
+----
+'use strict'
+
+class MongoSerializer {
+
+  * findById (id, options) {
+    // ...
+  }
+
+  * findByCredentials (email, options) {
+    // ...
+  }
+
+  * findByToken (token, options) {
+    // ...
+  }
+
+  * getUserForToken (tokenPayload, options) {
+    // ...
+  }
+
+  * saveToken (userPayload, token, options, expiry) {
+    // ...
+  }
+
+  * revokeTokens (userPayload, tokens, reverse) {
+    // ...
+  }
+
+  * validateToken (tokenPayload, options) {
+    // ...
+  }
+
+  * validateCredentials (userPayload, password, options) {
+    // ...
+  }
+
+  primaryKey(authenticatorOptions) {
+    // ...
+  }
+
+}
+----
+
+1. *findById* - 此方法应该使用唯一标识符找到用户并返回用户对象。 例如：Lucid serializer将返回User模型实例。
+2. *findByCredentials* - 该方法将使用在config /auth.js文件中定义的字段名称（uid）来找到用户，并且必须返回用户对象。
+3. *findByToken* - 此方法应使用唯一的令牌返回 `token` 对象。
+4. *getUserForToken* - 这里我们使用 *findByToken* 方法返回的 `token对象' 返回 `user对象' 。
+5. *saveToken* - 为给定用户保存令牌。 该令牌由auth提供程序本身生成，您必须保存以备以后使用。
+6. *revokeTokens* - 撤销单个/多个令牌。 如果`reverse = true`，则必须撤销所有令牌，除了作为第2个参数传递的令牌。
+7. *validateToken* - 您必须验证 *findByToken* 方法返回的token有效数据。 最常见的检查是验证有效期。
+8. *validatecredentials* - 此方法用于验证用户密码对纯密码。
+9. *primaryKey* — 该方法用于获取主键定义确保主键不为空的用户。
+
+=== Schemes
+Schemes定义了用户认证的方式。例如：会话，JWT，基本认证等，你如果需要可以添加你自己的计划。以下是你的可以使用的 Schemes 方法列表。
+
+
+NOTE: 您的计划的所有方法都暴露给最终用户。这意味着他们可以直接调用这些方法使用 `auth` 属性对 `request` 对象。
+
+[source, javascript]
+----
+'use strict'
+
+class FingerPrint {
+
+  constructor (request, serializer, options) {
+    this.request = request
+    this.serializer = serializer
+    this.options = options // config options
+  }
+
+  * check () {
+    // ...
+  }
+
+  * getUser () {
+    // ...
+  }
+
+}
+----
+
+1. *check* -  检查方法应该返回一个 *boolean* 值判断用户是否登录。您可以使用传递给构造函数的 `request` 参数访问当前请求的值。
+2. *getUser* - 只有当用户登录时，才返回用户有效数据。否则它应该返回 `null`

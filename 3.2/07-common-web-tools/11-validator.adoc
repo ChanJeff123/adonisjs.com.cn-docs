@@ -1,0 +1,298 @@
+---
+permalink: validator
+categories:
+- web 开发工具类
+---
+= 验证
+
+toc::[]
+
+给出用户数据是对任何应用程序的基本要求。 AdonisJs利用link:http://indicative.adonisjs.com/[Indicative, window="_blank"]来处理和验证用户输入。它支持来自Indicative的所有验证规则，因此请确保检查Indicative文档。
+
+== 设置
+验证器不是基本安装的一部分，因此您需要手动安装和注册。
+
+.从Npm安装
+[source, bash]
+----
+npm i --save adonis-validation-provider
+----
+
+.bootstrap/app.js
+[source, javascript]
+----
+const providers = [
+  // ...
+  'adonis-validation-provider/providers/ValidatorProvider'
+  // ...
+]
+----
+
+.bootstrap/app.js
+[source, javascript]
+----
+const aliases = {
+  // ...
+  Validator: 'Adonis/Addons/Validator'
+  // ...
+}
+----
+
+== 基本例子
+让我们来看一下验证一个表单来创建一个用户的最基本的例子。现在，我们将执行控制器内的所有验证，但您可以自由组织成单独的服务。
+
+我们首先定义用户模型的规则。请确保在链接上查看指示性文档link:http://indicative.adonisjs.com/#indicative-schema-rules[schema rules, window="_blank"]。
+
+.app/Model/User
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+  static get rules () { <1>
+    return {
+      username: 'required|unique:users',
+      email: 'required|email|unique:users',
+      password: 'required|confirmed',
+    }
+  }
+}
+----
+
+.app/Http/Controllers/UsersController.js
+[source, javascript]
+----
+'use strict'
+const Validator = use('Validator')
+const User = use('App/Model/User')
+
+class UsersController {
+
+  * store(request, response) {
+    const userData = request.all()
+    const validation = yield Validator.validate(userData, User.rules)  <2>
+
+    if (validation.fails()) { <3>
+      response.json(validation.messages()) <4>
+      return
+    }
+
+    // Validation passed, create the user.
+  }
+
+}
+----
+
+<1> 我们从*User Model*中定义规则开始。
+<2> 接下来，我们根据先前定义的规则验证来自请求的用户数据。
+<3> 如果验证失败，`validation.fails()`返回true。
+<4> `validation.messages()`将返回所有错误消息作为数组。
+
+
+== 验证方法
+以下是Validation Provider公开的方法列表
+
+==== validate(data, rules, [messages])
+根据定义的规则验证用户数据，并在第一次验证失败后立即返回。
+
+[source, javascript]
+----
+const validation = yield Validator.validate(data, rules, messages)
+----
+
+==== validateAll(data, rules, [messages])
+与`validate`相同，但直到最后一次验证，并返回多个错误消息。
+
+[source, javascript]
+----
+const validation = yield Validator.validateAll(data, rules, messages)
+----
+
+==== fails()
+返回一个布尔值，指示验证是否已失败。
+
+[source, javascript]
+----
+const validation = yield Validator.validate(data, rules, messages)
+if (validation.fails ()) {
+  // validation failed
+}
+----
+
+==== messages
+返回验证错误消息的数组。
+
+[source, javascript]
+----
+const validation = yield Validator.validate(data, rules, messages)
+if (validation.fails ()) {
+  response.send({error: validation.messages()})
+}
+----
+
+==== sanitize(data, rules)
+处理用户数据。还要确保检查link:sanitization[sanitization]文档了解更多信息。
+
+[source, javascript]
+----
+const data = request.all()
+const rules = {
+  email: 'normalize_email',
+  bio: 'strip_links',
+  fullname: 'capitalize'
+}
+
+const sanitizedData = Validator.sanitize(data, rules)
+----
+
+==== is
+您可以使用is方法进行内联验证，而不是进行完整的验证生命周期。
+
+
+[source, javascript]
+----
+if (Validator.is.email('foo')) {
+  // ...
+}
+----
+
+==== sanitizor
+与`is`相同，您可以进行内联数据处理。
+
+[source, javascript]
+----
+const sanitizedEmail = Validator
+  .sanitizor
+  .normalizeEmail('bar.sneaky+foo@googlemail.com')
+
+// returns barsneaky@gmail.com
+----
+
+== 自定义规则
+AdonisJs通过Indicative支持所有的验证规则，但也只添加了一些仅适用于AdonisJs的规则。以下是自定义规则的列表。
+
+==== unique(tableName, [fieldName])
+确定给定数据库表中给定的值是唯一的。
+
+[source, javascript]
+.app/Model/User
+----
+'use strict'
+
+class User extends Lucid {
+
+  static get rules () {
+    return {
+      email: 'unique:users,email'
+    }
+  }
+
+}
+----
+
+现在，当尝试更新用户时，您不会想要为同一用户运行唯一的验证。可以通过定义一个`whereNot`子句来实现。
+
+[source, javascript]
+.app/Model/User
+----
+'use strict'
+
+class User extends Lucid {
+
+  static rules (userId) {
+    return {
+      email: `unique:users,email,id,${userId}`
+    }
+  }
+
+}
+----
+
+在你的控制器里，你可以做
+
+.app/Http/Controllers/UsersController
+[source, javascript]
+----
+'use strict'
+
+const User = use('App/Model/User')
+
+class UsersController {
+
+  * update (request, response) {
+    const userId = request.param('id')
+
+    const rules = User.rules(userId) <1>
+    const validation = yield Validator.validate(request.all(), rules)
+  }
+
+}
+----
+
+<1> 从*User Model*中获取规则时，我们会传递在检查邮件唯一性时被忽略的用户标识。
+
+== 扩展验证器
+通常，您需要通过添加新的验证规则来扩展*Validator Provider*。您可以使用由链接提供的`extend`方法link:http://indicative.adonisjs.com/#indicative-extending[Indicative, window="_blank"]。
+
+==== 具体应用
+对于特定于应用程序的规则，您可以使用`app/Listeners/Http.js`文件来监听*start*事件和您的自定义规则。
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.onStart = function () {
+
+  const Validator = use('Adonis/Addons/Validator')
+  Validator.extend('adult', (data, field, message, args, get) => {
+
+    return new Promise((resolve, reject) => {
+      const fieldValue = get(data, field)
+      if (fieldValue > 18) {
+        resolve('Allowed')
+        return
+      }
+      reject(message)
+    })
+
+  }, 'You must be an adult')
+
+}
+----
+
+==== Via Provider
+如果您正在为AdonisJ编写module/addon，则可以在服service provider的`boot`方法中添加自定义规则。
+
+[source, javascript]
+----
+const ServiceProvider = require('adonis-fold').ServiceProvider
+
+class MyServiceProvider extends ServiceProvider {
+
+  _adultValidation (data, field, message, args, get) {
+
+    return new Promise((resolve, reject) => {
+      const fieldValue = get(data, field)
+      if (fieldValue > 18) {
+        resolve('Allowed')
+        return
+      }
+      reject(message)
+    })
+
+  }
+
+  boot () {
+    const Validator = use('Adonis/Addons/Validator')
+    Validator.extend('adult', this._adultValidation, 'You must be an adult')
+  }
+
+  * register () {
+    // register bindings
+  }
+
+}
+----
+
+您可以像任何其他验证规则一样使用上述定义的`adult`。

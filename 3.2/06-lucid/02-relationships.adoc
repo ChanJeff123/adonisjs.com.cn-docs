@@ -1,0 +1,686 @@
+---
+permalink: relationships
+categories:
+- lucid
+---
+= 关系
+
+toc::[]
+
+关系数据库在管理多个数据库表之间的关系方面非常强大，Lucid通过提供的JavaScript的数据库关联来扩展此功能，这意味着您可以在不触及SQL模式的情况下定义两个表之间的关系。
+
+== 基本例子
+关系数据库旨在定义两个或多个数据库表之间的关系，定义关系有许多好处，因为它们使常见的数据库操作更容易。
+
+让我们来看一个用户和一个配置文件模型的最常见的场景，数据库中的每个用户都可以拥有社交个人资料。我们称之为*一对一关系*。
+
+要描述这种关系，您必须向用户模型添加以下代码行
+
+.app/Model/User.js
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+
+  profile () {
+    return this.hasOne('App/Model/Profile') <1>
+  }
+
+}
+----
+
+<1> `hasOne`方法定义给定模型上的一对一关系
+
+现在您可以调用`profile`方法来访问指定用户的信息。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const userProfile = yield user.profile().fetch()
+----
+
+== 关系类型
+
+=== 一对一
+`hasOne` 关系定义了使用外键的2个模型之间的一对一关系。外键使用给定模型的唯一名称后跟*_id*创建。但是，您可以使用自己喜欢的方式替换他。
+
+[options="header"]
+|====
+| 模型 | 外键
+| User | user_id
+| Seller | seller_id
+|====
+
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841270/has-one_zfrkve.jpg[]
+
+要设置上图所示的关系，您需要在User模型中定义它。
+
+==== hasOne(relatedModel, [primaryKey=id], [foreignKey=user_id])
+
+.app/Model/User.js
+[source, javascript]
+----
+class User extends Lucid {
+
+  profile () {
+    return this.hasOne('App/Model/Profile')
+  }
+
+}
+----
+
+=== 隶属关系（BelongsTo）
+这种`belongsTo`关系是`hasOne`关系的反向关联，也依赖于外键。所以，记住它的最好的方法是用外键，任何具有外键关系的数据表，他的模型将始终具有`belongsTo`关系。
+
+没有一个比较复杂的关系设计的规则，但是以最自然的方式设计他们总是很好，例如：
+
+[options="header"]
+|====
+| 模型 | 关系 | 关联模型
+| User | hasOne | Profile
+| Profile | belongsTo | User
+| Student | hasOne | IdCard
+| IdCard | belongsTo | User
+|====
+
+希望这是有意义的，继续使用 *User* *Profile* 关系, Profile 模型将包含 `belongsTo` 关系来实现它所具有的外键关系。
+
+==== belongsTo(relatedModel, [primaryKey=id], [foreignKey=user_id])
+
+.app/Model/Profile.js
+[source, javascript]
+----
+class Profile extends Lucid {
+
+  user () {
+    return this.belongsTo('App/Model/User')
+  }
+
+}
+----
+
+=== 一对多
+您会发现自己`hasMany`经常使用，因为这是任何应用程序所需的最常见的关系。我们来看一些例子:
+
+[options="header"]
+|====
+| 模型 | 关系 | 关联模型
+| Book | hasMany | Chapter
+| Chapter | belongsTo | Book
+| Post | hasMany | Comment
+| Comment | belongsTo | Post
+|====
+
+`hasMany` 关系使得每个主表记录通过各自的外键可以拥有多条想的记录在从表中
+
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841272/has-many_p91i9i.jpg[]
+
+> 译者注：上图表关系是错误的，已向原作者提交issue
+
+我们来定义上述模型及其在Lucid中的关系：
+
+==== hasMany(relatedModel, [primaryKey=id], [foreignKey=book_id])
+
+.app/Model/Book.js
+[source, javascript]
+----
+class Book extends Lucid {
+
+  chapters () {
+    return this.hasMany('App/Model/Chapter')
+  }
+
+}
+----
+
+.app/Model/Chapter.js
+[source, javascript]
+----
+class Chapter extends Lucid {
+
+  book () {
+    return this.belongsTo('App/Model/Book')
+  }
+
+}
+----
+
+=== 隶属多个关系（BelongsToMany）
+有些情况下，关系的每一边都可以在数据库中有很多相关的数据。我们来看一些例子
+
+[options="header"]
+|====
+| 模型 | 关系 | 关联模型
+| Student | belongsToMany | Courses
+| Course | belongsToMany | Students
+| Post | belongsToMany | Categories
+| Category | belongsToMany | Posts
+|====
+
+以学生和课程为例，其中两个模型都可以在数据库中拥有许多相关的行数据。换句话说，这是一个多对多的关系
+
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841273/belongsto-many_ymawpb.jpg[]
+
+看上图，你会注意到有一个第三个表course_student。由于两端的每个模型有`hasMany`关系，所以它们之间不能设置对方的外键，而需要一个中间表。
+
+第三个表被称为*枢轴表*，它拥有两个模型的外键，并定义了它们之间的独特关系。让我们在Lucid中定义这个关系，并查看可配置的选项。
+
+==== belongsToMany(relatedModel, [pivotTable], [localKey], [otherKey])
+.app/Model/Student.js
+[source, javascript]
+----
+class Student extends Lucid {
+
+  courses () {
+    return this.belongsToMany('App/Model/Course')
+  }
+
+}
+----
+
+.app/Model/Course.js
+[source, javascript]
+----
+class Course extends Lucid {
+
+  students () {
+    return this.belongsToMany('App/Model/Student')
+  }
+
+}
+----
+
+`belongsToMany` 方法接受多个参数来配置关系的表/字段
+
+[options="header"]
+|====
+| 参数 | 必须 | 默认值
+| pivotTable  | No | 数据透视表是每个模型名称的单数形式，按名称排列。例如，课程和学生模型将以course_student作为数据透视表名称。
+| localKey  | No | 参考数据透视表内的模型外键
+| otherKey  | No | 参考相关模型外键在数据透视表中
+|====
+
+==== withTimestamps()
+携带时间戳
+此外，您还可以选择在数据透视表上保存时间戳。
+
+[source, javascript]
+----
+class Student extends Lucid {
+  courses () {
+    this.belongsToMany('App/Model/Course').withTimestamps()
+  }
+}
+----
+
+=== 远层一对多（HasManyThrough）
+Lucid支持的另一个重要的关系类型是`hasManyThrough`,给定模型通过第三模型依赖于另一模型
+
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841274/has-many-through_vux5jm.jpg[]
+
+以某个国家的职位为例，想直接关联他们是不可能的，因为国家和职位之间没有直接的关系。但是在用户模型的帮助下，我们可以建立国家和职位之间的间接关系，这就是所谓的hasManyThrough关系。
+
+.app/Model/Country.js
+[source, javascript]
+----
+class Country extends Lucid {
+
+  posts () {
+    return this.hasManyThrough('App/Model/Post', 'App/Model/User')
+  }
+
+}
+----
+
+现在为某个国家提取帖子, 你只需要在*Country 模型中*调用`posts方法`
+
+[source, javascript]
+----
+const country = yield Country.findBy('name', 'India')
+const posts = yield country.posts().fetch()
+response.json(posts)
+----
+
+`hasManyThrough` 方法接收参数选项
+
+[options="header"]
+|====
+| 参数 | 必须  | 默认值
+| relatedModel | Yes | null
+| throughModel | Yes | null
+| primaryKey | No | 当前模型主键
+| foreignKey | No | 当前模型外键
+| throughPrimaryKey | No | 远层关联表主键
+| throughForeignKey | No | 远层关联表外键
+|====
+
+== 查询关系
+使用Lucid查询数据库的关系是简单直观的，你只需要调用定义的关系方法，而不用担心连接查询。
+
+当然，查询关系也分延迟加载（懒加载），预加载（积极加载），惰性加载三大类
+
+=== 延迟加载（懒加载）（Lazy Loading）
+延迟加载是从数据库获取主/父记录之后加载关系的过程
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  profile () {
+    return this.hasOne('App/Model/Profile')
+  }
+
+}
+----
+
+[source, javascript]
+----
+const user = yield User.find(1) <1>
+const profile = yield user.profile().fetch() <2>
+----
+
+<1> 首先我们find是一个主键的用户
+<2> 然后我们调用先前定义的`profile`方法来获取指定用户的相关信息。
+
+==== 定义查询约束（Defining Query Constraints）
+您还可以将查询构建器方法附加到关系定义中，Lucid将确保执行它们。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  profile () {
+    return this
+      .hasOne('App/Model/Profile')
+      .where('is_active', true) <1>
+  }
+
+}
+----
+
+<1> 现在，当您为某个指定的用户获取信息时，它将只包含`is_active = true`的记录
+
+==== 运行时查询约束（Runtime Query Constraints）
+您也可以通过链式查询构建器方法来定义运行时查询约束。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const profile = user
+  .profile()
+  .where('is_active', true)
+  .fetch()
+----
+
+=== 预加载（积极加载）（Eager Loading）
+延迟加载可能会在某些情况下产生 *N+1* 的问题。例如，为十个用户加载个人信息，一个接一个共查询11个，要解决这个问题，你可以预加载个人信息，这样会产生两个数据库查询结果。
+
+
+[source, javascript]
+----
+const users = yield User
+  .query()
+  .with('profile') <1>
+  .fetch()
+
+console.log(users.toJSON())
+----
+
+.Output
+[source, javascript]
+----
+[
+  {
+    id: 1,
+    username: 'joe',
+    email: '...',
+    profile: {
+      id: 4,
+      avatar: '...'
+    }
+  }
+]
+----
+
+<1> 这个`with`方法可用于与父记录的热负荷关系，此外，您可以使用`with`方法加载多个、嵌套关系。
+
+==== 预加载（积极加载）多个关系（Eager Loading Multiple Relations）
+[source, javascript]
+----
+const users = yield User
+  .query()
+  .with('profile', 'friends')
+  .fetch()
+----
+
+==== 预加载（积极加载）嵌套关系（Eager Loading Nested Relations）
+
+[source, javascript]
+----
+const user = yield User
+  .query()
+  .with('friends.profile')
+  .fetch()
+----
+
+==== 运行时查询约束（Runtime Query Constraints）
+此外，您可以建立在查询构建器上以过滤相关模型的结果
+
+[source, javascript]
+----
+const user = yield User
+  .with('profile', 'friends')
+  .scope('profile', (builder) => {
+    builder.where('is_active', true)
+  }) <1>
+  .scope('friends', (builder) => {
+    builder.orderBy('rank', 'desc')
+  })
+  .fetch()
+----
+
+<1> 该`scope`方法允许您访问相关模型的查询构建器，这意味着您可以添加`where`子句来过滤结果。
+
+=== 惰性加载（Lazy eager loading）
+惰性加载时xref:_lazy_loading[Lazy loading] 和 xref:_eager_loading[Eager Loading] ，并不是预先加载所有关系。您获取父模型实例，然后加载所有相关模型。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+yield user.related('profile', 'friends').load()
+
+console.log(user.toJSON())
+----
+
+.Output
+[source, javascript]
+----
+[
+  {
+    id: 1,
+    username: 'joe',
+    email: '...',
+    profile: {
+      id: 4,
+      avatar: '...'
+    }
+  }
+]
+----
+
+== 过滤记录
+
+NOTE: adonis-lucid 3.0.13或更高版本支持
+
+一个很常见的用例是根据关系中的某些条件过滤顶层结果。例如：
+
+1. 显示所有贡献了至少一个帖子的用户
+2. 在一生中拥有2名或更多业主的所有汽车
+
+理想情况下，它需要一些复杂的连接，但Lucid使您更容易
+
+==== has(relation, [expression], [value])
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  posts () {
+    return this.hasMany('App/Model/Post')
+  }
+
+}
+
+// filtering
+const users = yield User.query().has('posts').fetch()
+
+// two or more
+const users = yield User.query().has('posts', '>=', 2).fetch()
+----
+
+==== whereHas(relation, callback, [expression], [value])
+
+[source, javascript]
+----
+const users = yield User.query().whereHas('posts', (builder) => {
+  builder.where('is_published', true)
+}).fetch()
+----
+
+此外，您可以使用 `doesntHave` 和 `whereDoesntHave` 方法, 这俩方法与上述方法相关。
+
+==== doesntHave(relation)
+
+[source, javascript]
+----
+const users = yield User.query().doesntHave('friends').fetch()
+----
+
+==== whereDoesntHave(relation, callback)
+
+[source, javascript]
+----
+const users = yield User.query().whereDoesntHave('friends', (builder) => {
+  builder.where('is_verified', false)
+}).fetch()
+----
+
+=== 计数相关模型
+web应用通常使用关系统计数量，例如：为每个帖子获取评论数量
+
+==== withCount(relation)
+
+[source, javascript]
+----
+class Post extends Lucid {
+
+  comments () {
+    this.hasMany('App/Model/Comment')
+  }
+
+}
+
+// fetching counts
+const posts = yield Posts.query().withCount('comments').fetch()
+
+console.log(posts.first().comments_count)
+----
+
+== 插入，更新和删除
+关系也可以创建，更新和删除，同样轻松取得它们。而每种关系类型具有稍微不同的方法来持久存在相关数据。
+
+==== save(modelInstance, [pivotValues])
+该save方法可用于创建/更新相关的模型实例。它需要满足以下关系
+
+NOTE:: `pivotValues` 仅仅由*belongsToMany* 关系支持， 关于如何定义pivotValues的请阅读 xref:_attach_rows_pivotvalues[attach] 文档
+
+[support-list]
+1. hasOne
+2. hasMany
+3. belongsToMany
+
+[source, javascript]
+----
+const user = yield User.find(1)
+
+const profile = new Profile()
+profile.name = '@cybernox'
+profile.avatar =  '...'
+
+yield user.profile().save(profile)
+----
+
+==== create(values, [pivotValues])
+该`create`方法几乎类似于` save`方法，而您传递的参数应该是任意对象而不是传递模型实例。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+
+yield user
+  .profile()
+  .create({name: '@cybernox', avatar: '...'})
+----
+
+==== saveMany(arrayOfInstances)
+保存给定模型实例的多个相关记录。`saveMany`适用于以下关系类型。
+
+1. hasMany
+2. belongsToMany
+
+[source, javascript]
+----
+const user = yield User.find(1)
+
+const profile = new Profile({name: '@cybernox'})
+const anotherProfile = new Profile({name: '@jgwhite'})
+
+yield user.profile.saveMany([profile, anotherProfile])
+----
+
+==== createMany(arrayOfValues)
+该`createMany`方法还将创建多个记录，您应该传递的参数对象数组而不是模型实例。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const profiles = yield user
+  .profile()
+  .createMany([{name: '@cybernox'}, {name: 'jgwhite'}])
+----
+
+==== attach(rows, [pivotValues])
+该`attach`方法仅适用于`belongsToMany`关系。您应该附加现有记录以形成关系。
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+const coursesIds = yield Courses.ids()
+
+yield Student.courses().attach(coursesIds)
+----
+
+或者，您可以传递一个对象来填充*pivotTable*内的字段。
+
+[source, javascript]
+----
+yield Student.courses().attach(coursesIds, {enrollment_confirmed: false})
+----
+
+者您还可以为每个相关行定义不同的pivotValues。
+
+[source, javascript]
+----
+const mathsId = yield Courses
+  .query()
+  .where('name', 'Maths')
+  .pluckId()
+
+const englishId = yield Courses
+  .query()
+  .where('name', 'English')
+  .pluckId()
+
+const enrollment = {}
+enrollment[mathsId] = {enrollment_confirmed: true}
+enrollment[englishId] = {enrollment_confirmed: false}
+
+yield Student.courses().attach(enrollment)
+----
+
+==== detach(rows)
+该 `detach` 方法与 xref:_attach_rows_pivot_values[attach]相反，并将从pivotTable中删除关系
+
+NOTE: 该`detach`方法不会从相关模型中删除行。它只是从数据透视表中删除关系。
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+const coursesIds = yield Courses.ids()
+
+yield Student.courses().detach(coursesIds)
+----
+
+==== sync(rows, [pivotValues])
+该`sync`会删除所有现有的关系，只会增加特定关系，吧xref:_detach_rows[detach] 和 xref:_attach_rows_pivot_values[attach] together联系起来理解
+
+TIP: 您也可以将*pivotValues*传递给类似于attach方法的sync方法。
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+const coursesIds = yield Courses.ids()
+
+yield Student.courses().sync(coursesIds)
+----
+
+==== updatePivot(values, [relatedModelId])
+为了更新数据透视表中的值，您可以使用updatePivot方法。
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+Student.courses().updatePivot({marks: 90})
+----
+
+或者
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+const maths = yield Course.where('name', 'Maths').first()
+Student.courses().updatePivot({marks: 90}, maths.id)
+----
+
+==== withPivot(keys)
+获取`belongsToMany` lucid的记录将不会从数据透视表中选择任何行。为了获取其他字段，您可以使用withPivot方法。
+
+NOTE: 数据透视表字段将作为前缀_pivot_,在下面的示例中，标记将作为返回_pivot_marks`_pivot_marks`
+
+[source, javascript]
+----
+'use strict'
+
+class Student extends Lucid {
+
+  courses () {
+    return this.belongsToMany('App/Model/Course').withPivot('marks')
+  }
+
+}
+----
+
+还可以在运行select查询时定义字段
+
+[source, javascript]
+----
+const student = yield Student.find(1)
+const courses = yield student.courses().withPivot('marks').fetch()
+----
+
+==== associate(modelInstance)
+该`associate`方法与*belongsTo*关系一起使用以关联现有的数据库行。
+
+[source, javascript]
+----
+const user = yield User.find(1)
+const profile = new Profile()
+profile.name = '@cybernox'
+
+profile.user().associate(user)
+yield profile.save()
+----
+
+==== dissociate
+该`dissociate`方法与xref:_associate_model_instance[associate]方法相反，并将删除现有的关系
+
+[source, javascript]
+----
+const profile = yield Profile.find(1)
+
+profile.user().dissociate()
+yield profile.save()
+----

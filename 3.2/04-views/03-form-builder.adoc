@@ -1,0 +1,299 @@
+---
+permalink: form-builder
+categories:
+- 视图
+---
+= 表单生成器
+
+toc::[]
+
+表单生成使得更容易创建快速和可维护的HTML表单。 考虑一种情况，您将表单操作设置为注册路由，并且当路由定义更改时，您必须回到视图，确保您的表单操作指向正确的URL。
+
+表单生成器为您提供了将路由和控制器直接绑定到表单的API，从而更容易在一个地方进行更改，同样会在您的视图中反映出来。
+
+== 基本例子
+让我们举一个使用表单生成器创建新用户表单的例子。
+
+.路由
+[source, javascript]
+----
+Route.post('/users', 'UserController.store')
+----
+
+.视图
+[source, twig]
+----
+{{ form.open({action: 'UserController.store'}) }}
+
+  {{ csrfField }}
+
+  <div class="field">
+    {{ form.label('username', 'Choose a username') }}
+    {{ form.text('username') }}
+  </div>
+
+  <div class="field">
+    {{ form.label('email', 'Enter email address') }}
+    {{ form.text('email') }}
+  </div>
+
+  <div class="field">
+    {{ form.label('password', 'Choose a strong password') }}
+    {{ form.password('password') }}
+  </div>
+
+  <div class="button">
+    {{ form.submit('Register') }}
+  </div>
+
+{{ form.close() }}
+----
+
+`form.open` 可以绑定路由控制器，这意味着如果以后你会将路由URL从 `/users` 更改为别的东西，那么你不必在视图内进行更改，因为它绑定到控制器上。
+
+== Open/Close Forms
+`form.open` 方法可以使用以下属性之一设置表单 *action* 和 *method* 。
+
+action::
+关联控制器的相应方法
+
++
+[source, twig]
+----
+{{ form.open({action: 'UserController.update'}) }}
+{{ form.close() }}
+----
+
+route::
+关联控制器的路由
+
++
+[source, twig]
+----
+{{ form.open({route: 'users.store'}) }}
+{{ form.close() }}
+----
+
+url::
+手动定义一个自定义的url和form method。
+
++
+[source, twig]
+----
+{{ form.open({url: '/users', method: 'POST'}) }}
+{{ form.close() }}
+----
+
+params::
+将路由参数作为对象传递。 *action* 和 *route* 属性将使用参数形成正确的URL
+
++
+[source, twig]
+----
+{{ form.open({ action: 'UserController.update', params: {id: 1} }) }}
+{{ form.close() }}
+----
+
+== 上传文件
+要使用表单生成器上传文件，需要在 `open` 方法中将 `files` 属性设置为true。
+
+[source, twig]
+----
+{{ form.open({ action: 'UserController.store', files: true }) }}
+
+  <div class="field">
+    {{ form.file('avatar') }}
+  </div>
+
+{{ form.close() }}
+----
+
+== 表单生成器的方法列表
+以下是表单生成器实例上可用的所有可用方法的列表。
+
+==== label
+[source, twig]
+----
+{{ form.label('username', 'Enter Username') }}
+{{ form.label('username', 'Enter Username', {class: 'label-class'}) }}
+----
+
+.输出
+[source, html]
+----
+<label name="username"> Enter Username </label>
+----
+
+==== text
+[source, twig]
+----
+{{ form.text('username') }}
+{{ form.text('username', 'John', {class: 'input'}) }}
+----
+
+.输出
+[source, html]
+----
+<input type="text" name="username" value="John" class="input" />
+----
+
+就像 `text` 一样，您可以为所有给定的类型创建输入字段。
+
+[options="header"]
+
+|====
+| Input type | Method
+| password | form.password()
+| email | form.email()
+| color | form.color()
+| date | form.date()
+| url | form.url()
+| search | form.search()
+| hidden | form.hidden()
+|====
+
+
+==== file
+创建一个上传文件的按钮
+
+[source, twig]
+----
+{{ form.file('avatar') }}
+----
+
+==== textarea
+[source, twig]
+----
+{{ form.textarea('description') }}
+{{ form.textarea('description', value) }}
+{{ form.textarea('description', value, {class: 'big'}) }}
+----
+
+==== radio
+[source, twig]
+----
+{{ form.radio('gender', 'male') }}
+{{ form.radio('gender', 'female', true) }}
+----
+
+==== checkbox
+[source, twig]
+----
+{{ form.checkbox('terms', 'agree') }}
+{{ form.checkbox('terms', 'agree', true) }}
+----
+
+==== select
+[source, twig]
+----
+{{ form.select('countries', ['India', 'US', 'UK'], null, 'Select Country') }}
+----
+
+.输出
+[source, html]
+----
+<select name="countries">
+  <option value="">Select Country</option>
+  <option value="India">India</option>
+  <option value="US">US</option>
+  <option value="UK">UK</option>
+</select>
+----
+
+此外，您可以传递键/值对的对象来代替纯数组。
+
+[source, twig]
+----
+{{ form.select('countries', {ind: 'India', us: 'Usa'}) }}
+----
+
+.输出
+[source, html]
+----
+<select name="countries">
+  <option value="ind">India</option>
+  <option value="us">US</option>
+</select>
+----
+
+您还可以为下拉框定义 *selected* 选项。
+
+[source, twig]
+----
+{{ form.select(
+    'countries',
+    {ind: 'India', us: 'Usa', uk: 'UK'},
+    ['ind', 'us'],
+    'Select Country',
+    {multiple: true}
+  )
+}}
+----
+
+.输出
+
+[source, html]
+----
+<select name="countries" multiple>
+  <option value="">Select Country</option>
+  <option value="ind" selected>India</option>
+  <option value="us" selected>US</option>
+  <option value="us">US</option>
+</select>
+----
+
+==== selectRange
+在给定范围内创建一个包含多个选项的选择框。
+
+[source, twig]
+----
+{{ form.selectRange('days', 1, 30) }}
+----
+
+.输出
+
+[source, html]
+----
+<select name="days">
+  <option value="1">1</option>
+  <option value="2">3</option>
+  <option value="3">3</option>
+  ...
+</select>
+----
+
+==== submit
+[source, twig]
+----
+{{ form.submit('Create Account', 'create') }}
+----
+
+.输出
+[source, html]
+----
+<input type="submit" name="create" value="Create Account" />
+----
+
+==== button
+[source, twig]
+----
+{{ form.button('Create Account', 'create') }}
+----
+
+.输出
+[source, html]
+----
+<button type="submit" name="create"> Create Account </button>
+----
+
+==== resetButton
+[source, twig]
+----
+{{ form.resetButton('Clear') }}
+----
+
+.输出
+[source, html]
+----
+<button type="reset" name="Clear"> Clear </button>
+----

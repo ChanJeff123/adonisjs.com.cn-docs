@@ -1,0 +1,149 @@
+---
+permalink: helpers
+categories:
+- web 开发工具类
+---
+= 助手
+
+toc::[]
+
+助手Provider提供了一些方便的方法来获取*absolute paths*到您的应用程序的某些目录。对于第三方Service providers*来说，这是有帮助的，因为依靠相对路径不是很有用。
+
+== 基本例子
+在应用程序的任何地方，您可以使用Helper的Provider来获取到不同目录的路径。
+
+[source, javascript]
+----
+const Helpers = use('Helpers')
+const storagePath = Helpers.storagePath()
+----
+
+== 帮助方法
+以下是Helpers提供程序中可用方法的列表
+
+==== basePath
+返回到应用程序根目录的路径。
+
+[source, javasript]
+----
+Helpers.basePath()
+----
+
+==== appPath
+返回到应用程序目录的路径。
+
+[source, javascript]
+----
+Helpers.appPath()
+----
+
+==== publicPath([toFile])
+返回路径到目录中的文件的公用目录或路径。
+
+[source, javascript]
+----
+const publicPath = Helpers.publicPath()
+// or
+const cssFile = Helpers.publicPath('style.css')
+----
+
+==== configPath([toFile])
+返回路径到config目录或目录中文件的路径。
+
+NOTE: 建议使用link:config[Config Provider]从配置文件中读取值。
+
+[source, javascript]
+----
+const configPath = Helpers.configPath()
+// or
+const appConfig = Helpers.configPath('app.js')
+----
+
+==== storagePath([toFile])
+返回目录中存储目录或文件路径的路径。
+
+[source, javascript]
+----
+const storagePath = Helpers.storagePath()
+// or
+const logs = Helpers.storagePath('logs.json')
+----
+
+==== resourcesPath([toFile])
+返回目录中资源目录或文件路径。
+
+[source, javascript]
+----
+const resourcesPath = Helpers.resourcesPath()
+// or
+const appSass = Helpers.resourcesPath('assets/sass/app.scss')
+----
+
+==== migrationsPath([toFile])
+返回迁移目录的路径或目录中文件的路径。
+
+[source, javascript]
+----
+const migrationsPath = Helpers.migrationsPath()
+// or
+const UserSchema = Helpers.migrationsPath('UserSchema.js')
+----
+
+==== seedsPath([toFile])
+返回一个文件目录内的填充文件目录或路径
+
+
+[source, javascript]
+----
+const seedsPath = Helpers.seedsPath()
+// or
+const DatabaseSeed = Helpers.seedsPath('Database.js')
+----
+
+==== databasePath([toFile])
+返回数据库目录的路径或目录中文件的路径。
+
+[source, javascript]
+----
+const databasePath = Helpers.databasePath()
+// or
+const factoryFile = Helpers.databasePath('factory.js')
+----
+
+==== viewsPath([toFile])
+Returns path to the views directory or path to a file inside the directory.
+返回一个文件目录内的视图目录或路径。
+
+[source, javascript]
+----
+const viewsPath = Helpers.viewsPath()
+// or
+const welcomeView = Helpers.viewsPath('welcome.njk')
+----
+
+==== appNameSpace
+返回映射到`package.json`文件内的`app`目录的命名空间。
+
+[source, javascript]
+----
+const namespace = Helpers.appNameSpace()
+const UsersController = use(`${namespace}/Http/Controllers/UsersController`)
+----
+
+==== makeNameSpace(directory, toFile)
+返回给定目录中文件的完整命名空间。
+
+[source, javascript]
+----
+const httpListener = Helpers.makeNameSpace('Listeners', 'Http')
+
+// returns App/Listeners/Http.js
+----
+
+==== isAceCommand
+返回进程是否作为ace命令启动。
+
+[source, javascript]
+----
+Helpers.isAceCommand()
+----

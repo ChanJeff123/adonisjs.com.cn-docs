@@ -1,0 +1,717 @@
+---
+permalink: lucid
+categories:
+- lucid
+---
+= Lucid
+
+toc::[]
+
+Lucid是link:https://en.wikipedia.org/wiki/Active_record_pattern[Active record, window="_blank"]的实现，它是将SQL数据存储和操作作为对象的架构模式，Lucid使您轻松编写非平凡的Web应用程序变得如此简单。
+
+Lucid支持：
+
+[pretty-list]
+1. 通过JavaScript流畅的链式调用查询构造器的方法查询数据
++
+[source, javascript]
+----
+yield User.all()
+yield User.query().where('status', 'active').fetch()
+----
+
+2. 在不触及您的SQL模式的状态下定义数据库关系
++
+[source, javascript]
+----
+class User extends Lucid {
+
+  profile () {
+    return this.hasOne('App/Model/Profile')
+  }
+
+  posts () {
+    return this.hasMany('App/Model/Post')
+  }
+
+}
+----
+3. 运行内部事务查询
+4. Getters/Setters 即时变更数据
+5. 内置支持计算属性
+6. 数据库特定事件增加钩子函数
+7. 支持定义可见/隐藏的字段，以将其从JSON输出中删除。最好的例子是password从JSON输出中隐藏该字段。
+
+== 基本例子
+我们从创建用户模型的基本示例开始，并从相应的数据库表查询用户。
+
+.Creating New Model
+[source, bash]
+----
+./ace make:model User
+
+# or with migration
+./ace make:model User --migration
+----
+
+.app/Model/User.js
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+}
+----
+
+是的，这就是您需要定义一个Lucid模型。Lucid将使用一些预定义的约定找出数据库表名。例如，使用用户模型寻找用户表。
+
+.users (table)
+[source]
+----
++---------+-----------+--------------------+------------+
+| id (PK) |  username |  email             | password   |
++---------+-----------+--------------------+------------+
+| 1       |  unicorn  |  unicorns@ages.com | secret     |
+| 2       |  lois     |  lois@oscar.com    | secret     |
++---------+-----------+--------------------+------------+
+----
+
+NOTE: 确保使用link:migrations[迁移]来设置users表。Lucid不会为您创建/更改数据库表。
+
+现在我们想从users表中获取所有的用户，为了简单起见，我们将在routes文件中提取用户。
+
+.app/Http/routes.js
+[source, javascript]
+----
+const Route = use('Route')
+const User = use('App/Model/User')
+
+Route.get('/users', function * (request, response) {
+  const users = yield User.all() <1>
+  response.ok(users)
+})
+----
+
+<1> 该`all`方法将从数据库表中获取所有记录。认为它是`select * from "users"`查询.
+
+== 约定优于配置
+模型类继承了Lucid基类中的一些属性，这有效提升了代码复用性。如果要更改模型的默认行为，则仅实现以下方法。
+
+
+==== 表
+表名是您的模型类名的复数表示，当表名为多个单词时，则单词间需使用下划线'_'连接
+
+[options="header"]
+|====
+| 模型 | 表名
+| User | users
+| Person | people
+| PostComment | post_comments
+|====
+
+要覆盖传统的表名，可以从table `getter` 返回一个值。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get table () {
+    return 'my_users'
+  }
+
+}
+----
+
+==== 主键
+每个模型都需要设置一个主键，默认为`id`。当您将新模型保存到数据库时，主键的值将有Lucid自动填充，此外，主键是解决模型关系所必须的。
+
+[source, javascript]
+----
+class User extends Model {
+
+  static get primaryKey () {
+    return 'userId'
+  }
+
+}
+----
+
+==== 连接
+Connection参数可帮助您为给定模型使用不同的数据库连接。
+
+`config/database.js`文件中定义数据库连接。Lucid使用同一文件下定义的默认连接。但是，您可以改变此值以使用数据库配置文件中的任何定义的连接。
+
+.config/database.js
+[source, javascript]
+----
+module.exports = {
+  connection: 'mysql',
+
+  mysql: {
+    ....
+  },
+
+  reportsMysql: {
+    ...
+  }
+}
+----
+
+.app/Model/Report
+[source, javascript]
+----
+class Report extends Mysql {
+
+  static get connection () {
+    return 'reportsMysql'
+  }
+
+}
+----
+
+==== 自增
+有时应用程序使用`uuid`于作其主键。由于在持久化数据库记录之前生成了`uuids`，因此它们不会自动递增。所以很重要的一点就是告诉Lucid。
+
+[source, javascript]
+----
+class User extends Lucid {
+  static get primaryKey () {
+    return 'uuid'
+  }
+
+  static get incrementing () {
+    return false
+  }
+}
+----
+
+== 时间戳
+时间戳消除了在每次创建或更新记录时手动设置时间戳的需要，以下时间戳用于数据库不同的操作。
+
+==== createTimestamp
+创建时间戳字段是向数据库添加行的创建时间，您可以覆盖此属性以指定其他字段名称或返回null禁用它。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get createTimestamp () {
+    return 'created_at'
+  }
+
+}
+----
+
+==== updateTimestamp
+每次修改数据库表中的一行数据时，该行`updateTimestamp`将被更新为当前时间。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get updateTimestamp () {
+    return 'updated_at'
+  }
+
+}
+----
+
+==== deleteTimestamp
+`deleteTimestamp` 与 `createTimestamp`和`updateTimestamp`不同，如果要使用软删除，您应该只返回此方法的值。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get deleteTimestamp () {
+    return null
+  }
+
+}
+----
+
+软删除是通过更新删除时间戳而不是从数据库中删除行来删除记录的术语。换句话说，`软删除是安全删除`，您从不会从SQL表中丢失数据。
+
+默认情况下禁用软删除，并且要启用它们，您必须从`deleteTimestamp` 的getter 返回表字段名称。
+
+NOTE: 您可以使用xref:withtrashed[withTrashed]方法来获取
+
+==== 日期格式
+日期格式指定应保存时间戳的日期格式。内部模型将日期转换为link:http://momentjs.com/[moment.js, window="_blank"]实例。您可以定义由momentj支持的任何有效的日期格式。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get dateFormat () {
+    return 'YYYY-MM-DD HH:mm:ss'
+  }
+
+}
+----
+
+== 从JSON输出中省略字段
+很多时候你会发现自己从数据库结果中省略/挑选字段。例如：从JSON输出`隐藏用户的密码`手动执行此操作可能会很繁琐：
+
+1. 您需要手动循环遍历行并删除键/值对。
+2. 当您获取关系时，您将必须循环遍历所有父记录，然后将其子记录循环删除键/值对。
+
+通过在模型上定义可见或隐藏（一次一个），AdonisJs使其更简单。
+
+.Defining Hidden
+[source, javascript]
+----
+class User extends Lucid {
+
+  static get hidden () {
+    return ['password']
+  }
+
+}
+----
+
+.Defining Visible
+[source, javascript]
+----
+class Post extends Lucid {
+
+  static get visible () {
+    return ['title', 'body']
+  }
+
+}
+----
+
+== 查询范围/查询作用域（scope）
+查询范围是在模型中定义的流畅的方法，作为静态方法，可以在查询生成器链中使用，将它们视为`扩展查询`构建器的描述性方便方法。
+
+[source, javascript]
+----
+class User extends Lucid {
+
+  static scopeActive (builder) {
+    builder.where('status', 'active')
+  }
+
+}
+----
+
+现在要使用`active`条件，您只需要在查询生成器链上调用该方法即可。
+
+[source, javascript]
+----
+const activeUsers = yield User.query().active().fetch()
+----
+
+=== 查询范围/查询作用域规则（scope规则）
+[pretty-list]
+1. 查询作用域始终定义为静态方法
+2. 您必须附加您的方法，scope+PascalCase方法名称。例如： `scopeLatest()`将被作为 `latest`使用.
+3. 在使用自定义的查询作用域之前您必须调用模型上的方法。
+
+== 特征（Traits）
+不幸的是目前JavaScript没有语言层面的支持`traits/mixins`，但`Lucid`模型使您可以更轻松地将特征添加到模型中，并通过添加新的方法/属性来扩展它们。
+
+==== traits
+[source, javascript]
+----
+class Post extends Lucid {
+
+  static get traits () {
+    return ['Adonis/Traits/Slugify']
+  }
+
+}
+----
+
+==== trait使用
+此外，您可以使用该`use`方法动态添加特征。
+
+[source, javascript]
+----
+class Post extends Lucid {
+
+  static boot () {
+    super.boot()
+    this.use('Adonis/Traits/Slugify')
+  }
+
+}
+----
+
+NOTE: 确保仅定义traits一次, 重新定义特征将导致一个性状的多次注册，并且模型可能会出问题。 定义`动态特征`的最佳位置在Model的boot方法中
+
+== CRUD操作
+CRUD是用于从数据库表创建，读取，更新和删除记录的术语。Lucid 模型提供了一些方便的方法，使此过程更容易。让我们Post模型实现一个*posts*管理的例子
+
+.posts table
+[source]
+----
++------------+-----------------+
+| name       |  type           |
++------------+-----------------+
+| id (PK)    |  INTEGER        |
+| title      |  VARCHAR(255)   |
+| body       |  TEXT           |
+| created_at |  DATETIME       |
+| updated_at |  DATETIME       |
++------------+-----------------+
+----
+
+.Create Post Model
+[source, bash]
+----
+./ace make:model Post
+----
+
+现在我们利用Post 模型来执行CRUD操作
+
+==== 创建
+[source, javascript]
+----
+const post = new Post()
+post.title = 'Adonis 101'
+post.body  = 'Adonis 101 is an introductory guide for beginners.'
+
+yield post.save() // SQL Insert
+----
+
+该`save`方法将模型保存到数据库，如果数据库中已经存在该行，它将更新它。或者，您还可以使用`create`方法，将您所有的值作为参数传入。
+
+[source, javascript]
+----
+const post = yield Post.create({
+  title: 'Adonis 101',
+  body: 'Adonis 101 is an introductory guide for beginners'
+})
+----
+
+==== 查询
+查询操作分为两种，首先是获取所有帖子，另一个是使用id或任何其他唯一标识符获取单个帖子的所有字段。
+
+.Fetching All Posts
+[source, javascript]
+----
+const posts = yield Post.all()
+----
+
+.Fetching A Single Post
+[source, javascript]
+----
+const postId = request.param('id')
+const post = yield Post.find(postId)
+
+if (post) {
+  yield response.sendView('posts.show', { post: post.toJSON() })
+  return
+}
+
+response.send('Sorry, cannot find the selected found')
+----
+
+==== 更新
+对现有的模型实例执行更新操作。一般情况下，是通过该行的ID作为唯一标识更新
+
+[source, javascript]
+----
+const post = yield Post.findBy('id', 1)
+post.body = 'Adding some new content'
+
+yield post.save() // SQL Update
+----
+
+或者，您还可以使用`fill`方法将所有新的键/值对作为对象传递。
+
+[source, javascript]
+----
+const post = yield Post.findBy('id', 1)
+post.fill({body: 'Adding some new content'})
+
+yield post.save() // SQL Update
+----
+
+==== 删除
+删除操作是对现有的模型实例执行删除操作，I如果您已打开 xref:_deletetimestamp[softDeletes], 不会从SQL中删除行。但是，模型实例将被视为已删除。
+
+[source, javascript]
+----
+const post = yield Post.findBy('id', 1)
+yield post.delete()
+----
+
+此外，从这一点，模型实例将冻结进行编辑。但是，您仍然可以从现有的模型实例读取数据，但无法再编辑它。
+
+[source, javascript]
+----
+const post = yield Post.findById(1)
+yield post.delete()
+
+console.log(post.title) // Adonis 101
+
+post.title = 'New title' // will throw RuntimeException
+----
+
+
+== Lucid 方法
+Lucid内部使用数据库提供程序，这意味着数据库提供程序的所有方法都可用于您的模型。此外，为方便起见，还添加了以下方法。
+
+==== query()
+该`query`方法将返回查询构建器实例，这意味着您将像数据库提供程序一样轻松构建查询。
+
+[source, javascript]
+----
+yield Post.query().where('title', 'Adonis 101').fetch()
+----
+
+==== fetch()
+了解该fetch方法的作用很重要。Fetch方法将执行查询链，但也确保返回模型实例的集合。
+
+这意味着集合数组中的每个项目不会是一个常规的对象。相反，它将是一个完整的模型实例。例如：
+
+.Without Fetch
+[source, javascript]
+----
+const posts = yield Post.query().where('title', 'Adonis 101')
+console.log(posts)
+----
+
+.Output
+[source]
+----
+[
+  {
+    id: 1,
+    title: 'Adonis 101',
+    body: 'Adonis 101 is an introductory guide for beginners.',
+    created_at: '2016-02-20 17:59:25',
+    updated_at: '2016-02-20 17:59:29'
+  }
+]
+----
+
+.With Fetch
+[source, javascript]
+----
+const posts = yield Post.query().where('title', 'Adonis 101').fetch()
+console.log(posts.value())
+----
+
+.Output
+[source]
+----
+[
+  Post {
+    attributes: {
+      id: 1,
+      title: 'Adonis 101',
+      body: 'Adonis 101 is an introductory guide for beginners.',
+      created_at: '2016-02-20 17:59:25',
+      updated_at: '2016-02-20 17:59:29'
+    },
+    original: { ... }
+  }
+]
+----
+
+后者是一系列的模型实例，它有其优点。我们会在另一个指南手册中讨论它。
+
+==== first()
+该`first`方法将仅返回第一个匹配的行作为模型实例,如果没有找到行，它将返回`null`。
+
+[source, javascript]
+----
+const post = yield Post.query().where('title', 'Adonis 101').first()
+----
+
+==== findBy(key, value)
+找到给定键/值对的单个行
+
+[source, javascript]
+----
+yield Post.findBy('title', '...')
+yield Post.findBy('body', '...')
+yield Post.findBy('id', '...')
+----
+
+==== find(value)
+该查询方法与xref:_find_by_key_value(findBy)方法相似，而本方法是使用xref:_primary_key(primaryKey) as the key for fetching the row.
+
+[source, javascript]
+----
+yield Post.find(1)
+----
+
+==== all()
+返回相应数据库表中的所有行
+
+[source, javascript]
+----
+yield Post.all()
+----
+
+==== ids()
+从相应的数据库表中返回所有ids的数组
+
+[source, javscript]
+----
+const ids = yield Post.ids()
+----
+
+==== pair(lhs, rhs)
+该方法将返回一个具有lhs和rhs键的键/值对的平面对象，填充选择框选项很有帮助。
+
+[source, javascript]
+----
+const countries = yield Country.pair('code', 'name')
+----
+
+.Output
+[source, javascript]
+----
+{
+  ind: 'India',
+  us: 'United States',
+  uk: 'United Kingdom'
+}
+----
+
+==== paginate(page, [perPage=20])
+该方法使分页数据库记录变得如此简单
+
+[source, javascript]
+----
+const posts = yield Post.paginate(request.input('page'))
+----
+
+==== pick([limit=1])
+该方法将从数据库中选择给定的记录数
+
+[source, javascript]
+----
+const posts = yield Post.pick(2)
+----
+
+==== pickInverse([limit=1])
+`pickInverse` 和 `pick` 方法具有相似的作用，不同的是`pickInverse`是按倒序排列
+
+[source, javascript]
+----
+const posts = yield Post.pickInverse(2)
+----
+
+==== create(values)
+该方法用于为数据库创建一个新行
+
+[source, javascript]
+----
+const user = yield User.create({ username: 'virk', email: 'virk@adonisjs.com' })
+----
+
+==== save()
+创建/更新模型实例
+
+[source, javascript]
+----
+const user = new User()
+user.username = 'virk'
+user.email = 'virk@adonisjs.com'
+
+yield user.save()
+----
+
+==== createMany()
+一次创建多个行，此方法将返回一个模型实例数组
+
+[source, javascript]
+----
+const users = yield User.createMany([{...}, {...}])
+----
+
+==== first()
+从数据库中选择第一行
+
+[source, javascript]
+----
+const user = yield User.first()
+----
+
+==== last()
+从数据库中选择最后一行
+
+[source, javascript]
+----
+const user = yield User.last()
+----
+
+== 查询失败报出异常
+Lucid还有一些方便的方法，当无法使用find或者findBy方法找到给定的行时，它将抛出异常。一些程序员发现容易抛出异常，并在后面的全局处理程序中捕获它们到处写if/else条件语句，使用下面的这些方法滨可以避免这些操作。
+
+==== findOrFail(value)
+
+[source, javascript]
+----
+const userId = request.param('id')
+const user = yield User.findOrFail(userId)
+----
+
+==== findByOrFail(key, value)
+
+[source, javascript]
+----
+const user = yield User.findByOrFail('username', 'virk')
+----
+
+如果你愿意的话，你可以把你的`orFail`方法包装在一个`try/catch`块中，或者你可以在`app/Listeners/Http.js`文件中全局处理它们。
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.handleError = function * (error, request, response) {
+  if (error.name === 'ModelNotFoundException') {
+    response.status(401).send('Resource not found')
+    return
+  }
+}
+----
+
+==== findOrCreate (whereAttributes, values)
+该`findOrCreate`方法是查找记录的快捷方式，如果没有找到，新的记录将被创建并立即返回。
+
+[source, javascript]
+----
+const user = yield User.findOrCreate(
+  { username: 'virk' },
+  { username: 'virk', email: 'virk@adonisjs.com' }
+)
+----
+
+==== withTrashed()
+该方法可用于获取软删除的行。
+
+[source, javascript]
+----
+const users = yield User.query().withTrashed().fetch()
+----
+
+== 事务处理
+AdonisJs拥有使用link:query-builder#_database_transactions[Database Provider]运行SQL事务的一流支持。此外，您的Lucid模型可以在创建，更新或删除记录时使用事务。
+
+==== 使用事务
+[source, javascript]
+----
+const Database = use('Database')
+const trx = yield Database.beginTransaction() <1>
+
+const user = new User()
+user.username = 'liza'
+user.password = 'secret'
+user.useTransaction(trx) <2>
+yield user.save()
+trx.commit() <3>
+----
+
+<1> 您应该始终使用数据库提供程序来创建新的事务，我们将事务与Lucid模型分离的原因是提供使用不同模型的相同事务实例的灵活性。
+<2> `useTransaction`方法将使用事务实例来执行即将到来的SQL操作
+<3> `commit` 方法使您能够提交事务,`rollback`意外事件发生时执行回滚

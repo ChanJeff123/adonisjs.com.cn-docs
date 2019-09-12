@@ -1,0 +1,212 @@
+---
+title: 从4.0升级
+permalink: upgrade-guide
+category: 介绍
+---
+
+= 从 4.0 升级
+
+toc::[]
+
+4.1 版本包含许多 * bug修复* 和 * API改进*，以保持代码库简单且不那么神奇。尽管突破性（破坏性）变化保持在最低限度，但也无法完全消除它们。
+
+== 起步
+
+第一步是更新所有依赖项。
+
+我们使用 link:https://www.npmjs.com/package/npm-check[npm-check] 来获取包的最新版本：
+
+[source, bash]
+----
+> npm install -g npm-check
+----
+
+运行以下命令以交互式方式来更新依赖项：
+
+[source, bash]
+----
+> npm-check -u
+----
+
+== 异常处理
+其中最重要的一个变化是 link:https://github.com/adonisjs/adonis-framework/issues/718[全局异常处理器, window="_blank"]。
+
+NOTE: 如果你从未创建过全局异常处理器，请忽略此部分。
+
+对 `app/Exceptions/Handler.js` 文件进行了以下更改：
+
+1. 确保你的异常处理器继承了 `BaseExceptionHandler`：
++
+[source, js]
+----
+const BaseExceptionHandler = use('BaseExceptionHandler')
+
+class ExceptionHandler extends BaseExceptionHandler {
+}
+----
+
+2. 调用 `super.handle` 来处理你不想处理的异常：
++
+[source, js]
+----
+class ExceptionHandler extends BaseExceptionHandler {
+  async handle (error, { response }) {
+    if (error.name === 'UserNotFoundException') {
+      // handle it yourself
+      return
+    }
+
+    super.handle(...arguments)
+  }
+}
+----
+
+3. 最后, 你可以从从你的代码库中移除 `Exception.bind` 调用，因为所有异常都将被路由到全局异常处理器上。
+
+== 路由
+
+==== Route.url
+
+`Route.url` 为预先注册的路由生成一个完全限定的URL
+
+以前, `domain` 是以字符串字面量形式传递的，现在它被接收为对象。
+
+以前：
+[source, js]
+----
+Route.url('posts/:id', { id: 1 }, 'blog.adonisjs.com')
+----
+
+现在：
+[source, js]
+----
+Route.url('posts/:id', { id: 1 }, { domain: 'blog.adonisjs.com' })
+----
+
+== 验证器
+验证器使用最新版本的 link:https://indicative.adonisjs.com[Indicative, window="_blank"], 带来以下突破性变化：
+
+==== 格式器
+命名格式器的概念已不复存在。
+
+如果你先使用预先存在的格式器，你现在必须引用传递，而不是传递名称。
+
+以前：
+[source, js]
+----
+const { validate } = use('Validator')
+validate(data, rules, messages, 'jsonapi')
+----
+
+现在：
+[source, js]
+----
+const { validate, formatters } = use('Validator')
+validate(data, rules, messages, formatters.JsonApi)
+----
+
+这同样适用于路由验证器。
+
+以前
+[source, js]
+----
+class StoreUser {
+  get formatter () {
+    return 'jsonapi'
+  }
+}
+----
+
+现在：
+[source, js]
+----
+const { formatters } = use('Validator')
+
+class StoreUser {
+  get formatter () {
+    return formatters.JsonApi
+  }
+}
+----
+
+==== 配置
+新版本 Indicative 暴露来 link:http://indicative.adonisjs.com/docs/api/configure[configure, window="_blank"] 方法来定义库范围的默认值：
+
+[source, js]
+----
+const { formatters, configure } = use('Validator')
+
+configure({
+  FORMATTER: formatters.JsonApi
+})
+----
+
+== 视图
+
+==== css
+
+`css` 全局 更改为 `style`。 不再支持 `css` 全局
+
+以前：
+[source, edge]
+----
+{{ css('style') }}
+----
+
+现在：
+[source, edge]
+----
+{{ style('style') }}
+----
+
+== Lucid
+以前，日期格式与新创建的记录和现有记录不一致。
+
+新版本中通过一个 *小小的突破性修改* 修复了它 (请务必阅读 link:https://github.com/adonisjs/adonis-lucid/issues/245[related issue])。
+
+==== 日期
+date 字段将不再被强制转换为模型实例上的 `moment` 实例。
+
+以前：
+[source, js]
+----
+const user = await User.find(1)
+user.created_at instanceof moment // true
+----
+
+现在：
+[source, js]
+----
+const user = await User.find(1)
+user.created_at instanceof moment // false
+----
+
+此更改可以防止你直接修改模型实例上的日期，而是在序列化模型属性时使用 `castDates` 钩子更改日期。
+
+`castDates` 钩子的工作原理和以前一样：
+
+[source, js]
+----
+class User extends Model {
+  static castDates (field, value) {
+    if (field === 'dob') {
+      return `${value.fromNow(true)} old`
+    }
+    return super.formatDates(field, value)
+  }
+}
+----
+
+== 好东西
+为了保证代码库的可靠性，已经做了大量的bug修复。此外，还做了一些性能改进。
+
+==== 验证器
+由于 Indicative 是从头开始重写的。新版本比以前的快了 *2倍* 。
+
+==== 中间件
+现在，中间件会在 **启动** 应用程序时由中间件解析层解析，并为每个请求实例化它们的一个新实例。而以前的 **解析** 过程是针对每一个请求的。
+
+==== 更好的错误
+错误将以一种更加友好的格式显示在你的终端上：
+
+image:https://pbs.twimg.com/media/DTHfXErU8AADIyQ.png[]

@@ -1,0 +1,162 @@
+---
+permalink: adonis-blog-part4
+categories:
+- 教程
+---
+= 博客文章列表
+
+在本教程中，我们将在 *PostController* 中继续使用 link:adonis-blog-part3[数据库模型]。 确保您的服务器已启动并运行在http://localhost:3333上。
+
+== 获取博客文章
+快速打开 *PostController* 文件并将以下代码段粘贴到其中。
+
+.app/Http/Controllers/PostController.js
+[source, javascript]
+----
+'use strict'
+
+const Post = use('App/Model/Post') <1>
+
+class PostController {
+
+  * index (request, response) {
+    const posts = yield Post.all() <2>
+    yield response.sendView('home', { posts: posts.toJSON() }) <3>
+  }
+
+}
+
+module.exports = PostController
+----
+
+我们对现有的控制器文件进行了很少的更改
+
+<1> 这里我们导入以前创建的 *Post* 模型；
+<2> 接下来，我们在模型上调用 `all` 方法来获取所有的帖子；
+<3> 最后，我们将帖子传递给我们的首页视图。
+
+使用以下代码段替换视图内的所有内容。
+
+.resources/views/home.njk
+[source, twig]
+----
+{% extends 'master' %}
+
+{% block content %}
+  <div class="posts-wrapper">
+    {% for post in posts %} <1>
+      <div class="post">
+        <h2><a href=""> {{ post.title }} </a></h2> <2>
+        <p> {{ post.content }} </p>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+----
+
+<1> 我们利用模板引擎 `for` 循环遍历文章列表；
+<2> 这里我们显示标题和内容。
+
+如果刷新页面，屏幕上将看不到任何内容，因为我们的数据库中有 *没有文章* 。 在我们添加它们之前，让我们在网页上显示一条消息，如果没有文章。
+
+在 {% endfor %} 标记之前添加以下代码段：
+
+.resources/views/home.njk
+[source, twig]
+----
+{% else %}
+  <h2> No posts found </h2>
+----
+
+所以会是
+
+[source, twig]
+----
+{% for post in posts %}
+    .....
+{% else %}
+  <h2> No posts found </h2>
+{% endfor %}
+----
+
+== 填充和工厂
+
+在实施添加新文章的逻辑之前，我们需要一些虚拟文章。 您可以通过在数据库界面中运行SQL查询来创建新的文章，但这将破坏快速开发和可重用性的全部目的。
+
+有很多用例的链接：link:seeds-and-factories#_about_factories[工厂] 和 link:seeds-and-factories#_about_seeds[填充] ，但现在，我们将使用它们来创建一些虚拟博客帖子。
+
+.database/factory.js
+[source, javascript]
+----
+'use strict'
+
+const Factory = use('Factory')
+
+Factory.blueprint('App/Model/Post', (fake) => {
+  return {
+    title: fake.sentence(),
+    content: fake.paragraph()
+  }
+})
+----
+
+工厂让您为您的模型定义蓝图。 每个蓝图都将模型名称作为第一个参数，回调作为第二个参数。 回调获取访问链接：link:http://chancejs.com/[chancejs, window="_blank"] 实例，用于生成随机数据。
+
+接下来，我们需要使用 `database / seeds / Database.js` 文件中定义的蓝图。
+
+.database/seeds/Database.js
+[source, javascript]
+----
+'use strict'
+
+const Factory = use('Factory')
+
+class DatabaseSeeder {
+
+  * run () {
+    yield Factory.model('App/Model/Post').create(5) <1>
+  }
+
+}
+
+module.exports = DatabaseSeeder
+----
+
+<1> 这里我们使用蓝图，并使用 `create` 方法创建五篇文章。
+
+最后，我们需要通过运行一个ace命令进行填充。
+
+[source, bash]
+----
+./ace db:seed
+----
+
+.输出
+[source]
+----
+✔ seeded database successfully
+----
+
+== 最终改进
+现在刷新浏览器，您将看到所有新创建的文章。 最后，我们将对文章列表做一些改进。
+
+.resources/views/home.njk
+[source, twig]
+----
+{{ post.content | truncate(150) }} <1>
+----
+
+<1> 这里我们使用 `truncate` 过滤器对文章内容限制字符数为150。
+
+.public/style.css
+[source, css]
+----
+.post {
+  margin-top: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e8e8e8;
+}
+----
+
+=== 文章列表预览
+image:http://res.cloudinary.com/adonisjs/image/upload/v1472841292/posts-list_wkpogd.png[]

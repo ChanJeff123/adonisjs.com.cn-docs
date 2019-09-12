@@ -1,0 +1,267 @@
+---
+permalink: service-providers
+title: 服务提供者
+category: 核心概念
+---
+
+= 服务提供者
+
+toc::[]
+
+到目前为止，我们学习了 link:ioc-container#_binding_dependencies[如何将依赖项绑定到 IoC 容器]。
+
+在本指南中，我们将进一步了解 *服务提供者*，以及如何分发与 AdonisJs 生态系统良好协作的软件包。
+
+== 介绍
+我们知道 `ioc.bind` 可以用于注册绑定。但是，我们还没有定义在何处调用此方法。
+
+这便是 *服务提供者* 发挥作用的地方。服务提供者是纯 ES6 类，具有注册和引导绑定的生命周期方法。
+
+例如：
+
+[source, js]
+----
+const { ServiceProvider } = require('@adonisjs/fold')
+
+class MyProvider extends ServiceProvider {
+  register () {
+    // 注册绑定
+  }
+
+  boot () {
+    // 可以做些初始配置
+  }
+}
+
+module.exports = MyProvider
+----
+
+1. `register` 方法用于注册绑定，你不应该在此方法中使用任何其他绑定。
+2. `boot` 方法会在提供者注册时调用，该方法也是使用现有绑定来引导应用程序状态到正确的位置。
+
+例如，添加全局视图：
+
+[source, js]
+----
+boot () {
+  const View = this.app.use('Adonis/Src/View')
+  View.global('time', () => new Date().getTime())
+}
+----
+
+== 作为服务提供者的 npm 包
+让我们看看如何在服务提供者中包装现有的npm包。
+
+NOTE: 一定不要在一个服务提供者中包装像 `lodash` 这样的包，因为它可以直接使用，且不需要任何设置过程。
+
+所有特定于应用程序的提供者都位于应用程序根目录下的 `providers` 目录中：
+
+=== 目录结构
+[source, bash]
+----
+├── app
+└── providers
+  └── Queue
+    └── index.js
+    └── Provider.js
+└── start
+----
+
+=== 原则
+假设我们将把 link:https://github.com/bee-queue/bee-queue[bee-queue, window="_blank"] 包装为提供者。
+
+以下是我们需要遵循的一套原则：
+
+1. 最终用户不必担心配置服务提供者的队列程序。
+2. 所有的配置都应该位于 `config/queue.js` 文件中。
+3. 创建具有不同配置的新队列应该足够简单。
+
+=== 实现
+让我们在 `providers/Queue/index.js` 文件中实现包装器：
+
+.providers/Queue/index.js
+[source, js]
+----
+'use strict'
+
+const BeeQueue = require('bee-queue')
+
+class Queue {
+  constructor (Config) {
+    this.Config = Config
+    this._queuesPool = {}
+  }
+
+  get (name) {
+    /**
+     * 如果已经有一个队列实例，返回它
+     */
+    if (this._queuesPool[name]) {
+      return this._queuesPool[name]
+    }
+
+    /**
+     * 使用 Config 读取配置
+     * 提供者
+     */
+    const config = this.Config.get(`queue.${name}`)
+
+    /**
+     * 创建一个新的队列实例并保存
+     * 引用
+     */
+    this._queuesPool[name] = new BeeQueue(name, config)
+
+    /**
+     * 返回实例
+     */
+    return this._queuesPool[name]
+  }
+}
+
+module.exports = Queue
+----
+
+上面的类只有一个调用方法 `get`,它返回 *给定队列名* 的队列实例。
+
+
+`get` 方法的执行步骤如下：
+
+1. 查找给定队列名称的实例。
+2. 如果实例不存在，请使用 *Config Provider* 读取配置。
+3. 创建一个新的 `bee-queue` 实例并存储到一个对象中，以便将来使用。
+4. 最后，返回实例。
+
+`Queue` 类是纯粹的，因为它对框架没有硬性依赖，而是依赖于 *依赖注入* 来提供 *Config Provider*。
+
+=== 服务提供者
+现在我们来创建一个服务提供者，然后实例化该类将其绑定到 IoC 容器上。
+
+代码位于 `providers/Queue/Provider.js` 中：
+
+.providers/Queue/Provider.js
+[source, js]
+----
+const { ServiceProvider } = require('@adonisjs/fold')
+
+class QueueProvider extends ServiceProvider {
+  register () {
+    this.app.singleton('Bee/Queue', () => {
+      const Config = this.app.use('Adonis/Src/Config')
+      return new (require('.'))(Config)
+    })
+  }
+}
+
+module.exports = QueueProvider
+----
+
+注意， `this.app` 是对 `ioc` 对象的引用，这意味着我们不是调用 `ioc.singleton`，而是调用 `this.app.singleton`。
+
+最后，我们需要像 `start/app.js` 文件中的其他提供者一样注册此提供程序：
+
+.start/app.js
+[source, js]
+----
+const providers = [
+  path.join(__dirname, '..', 'providers', 'Queue/Provider')
+]
+----
+
+现在，我们可以在应用程序的任何文件中调用 `use('Bee/Queue')` 来使用它：
+
+[source, js]
+----
+const Queue = use('Bee/Queue')
+
+Queue
+  .get('addition')
+  .createJob({ x: 2, y: 3 })
+  .save()
+----
+
+== 作为一个包分发
+我们创建的 xref:_npm_package_as_a_service_provider[bee queue] 提供者位于同一个项目结构中。但是，我们可以将其提取到自己的包中。
+
+让我们用以下的目录结构创建一个新目录：
+
+[source, bash]
+----
+└── providers
+    └── QueueProvider.js
+├── src
+  └── Queue
+    └── index.js
+└── package.json
+----
+
+我们所做的只是将实际的 `Queue` 实现移动到 `src` 目录，并将提供者文件重命名为 `QueueProvider.js`。
+
+此外，我们还必须进行以下更改：
+
+1. 由于 `Queue/index.js` 在另外的目录，我们需要在服务提供者内调整对该文件的引用。
+2. 将 `Bee/Queue` 命名空间更改为更合适的命名空间，这样冲突的可能性才会更小。例如，再为 AdonisJs 创建提供者时，我们将其命名为 `Adonis/Addons/Queue`。
+
+.providers/QueueProvider.js
+[source, js]
+----
+const { ServiceProvider } = require('@adonisjs/fold')
+
+class QueueProvider extends ServiceProvider {
+  register () {
+    this.app.singleton('Adonis/Addons/Queue', () => {
+      const Config = this.app.use('Adonis/Src/Config')
+      return new (require('../src/Queue'))(Config)
+    })
+  }
+}
+
+module.exports = QueueProvider
+----
+
+NOTE: 一定不要将 `@adonisjs/fold` 作为提供者的依赖项（请查看底部常见问题备注1），因为它应该由主应用程序安装。对于测试，你可以将其安装为 *开发依赖项*。
+
+=== 编写提供者测试
+AdonisJs 官方采用 link:https://github.com/thetutlage/japa[japa, window="_blank"] 编写提供者测试，但你也可以使用任何你先要的测试引擎。
+
+设置 japa 很简单：
+
+[source, bash]
+----
+> npm i --save-dev japa
+----
+
+在 `test` 目录中创建测试：
+
+[source, bash]
+----
+> mkdir test
+----
+
+可以使用以下 `node` 命令运行测试文件来执行测试：
+
+[source, bash]
+----
+> node test/example.spec.js
+----
+
+要同时运行所有测试，你可以使用 `japa-cli`:
+
+[source, js]
+----
+> npm i --save-dev japa-cli
+----
+
+然后运行所有测试：
+
+[source, bash]
+----
+> ./node_modules/.bin/japa
+----
+
+== 常见问题
+[ol-spaced]
+1. *为什么不安装 `@adonisjs/fold` 作为依赖？* +
+这一要求使得 `@adonisjs/fold` 的主程序版本总是被安装并供给提供者使用。否则，每个提供者最终都将提供自己版本的 AdonisJs IoC 容器。如果你曾经使用过 gulp，他们也 link:https://github.com/gulpjs/gulp/blob/master/docs/writing-a-plugin/guidelines.md[建议 指南14] 在创建插件时不要将 gulp 作为依赖项安装。
+
+译者注：如果不是很理解这段话的含义，请开发者自行搜索“dependencies、devDependencies和peerDependencies的区别”，同时尝试使用gulp、webpack等打包工具，自然就会理解为什么有的包不应该被安装到dependencies中，因为它并不是运行依赖，它们只是在开发阶段需要而已，这算是npm的一种设计机制。

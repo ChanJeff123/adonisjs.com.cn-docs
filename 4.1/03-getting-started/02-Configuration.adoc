@@ -1,0 +1,140 @@
+---
+title: 配置
+category: 起步
+permalink: configuration-and-env
+---
+
+= 配置
+
+toc::[]
+
+== 配置提供者
+
+拥有可维护代码库的第一步是找到用于存储应用程序配置的专用位置。
+
+AdonisJs 使用 `config` 目录，其中所有文件都在启动时加载。
+
+你可以通过  **Config Provider** 访问配置值：
+
+[source, js]
+----
+const Config = use('Config')
+const appSecret = Config.get('app.appSecret')
+----
+
+使用 `Config.get` 获取配置值，改方法接受以 `fileName.key` 形式引用所需要的key的字符串参数。
+
+你可以使用点符号获取嵌套的配置值：
+
+[source, js]
+----
+// 配置文件示例，例如： database.js
+{
+  mysql: {
+    host: '127.0.0.1',
+  },
+}
+
+// 你可以这样检索它...
+Config.get('database.mysql.host')
+----
+
+如果你不确定配置中是否定义了key，可以提供第二个参数，该参数将作为默认值返回：
+
+[source, js]
+----
+Config.get('database.mysql.host', '127.0.0.1')
+----
+
+如果你想更改内存配置项，请使用 `Config.set`：
+
+[source, js]
+----
+Config.set('database.mysql.host', 'db.example.com')
+----
+
+NOTE: `Config.set` 只会更改 **内存中** 的值，它不会将值写入配置文件。
+
+== 环境提供者
+
+构建应用程序时，你可能需要根据代码的运行环境进行不同的配置。
+
+为了满足这一需求，AdonisJs使用了 link:https://github.com/motdotla/dotenv[dotenv, window="_blank"] 库。
+
+在每个新的 AdonisJs 项目的根目录中，你将找到一个 `.env.example` 文件。如果你使用 AdonisJs CLI 安装应用程序，则此文件将自动复制为 `.env`。否则，你应该手动复制它。
+
+警告：`.env` 永远都不应该提交给你的源代码控制或与其他人共享。`.env` 具有简单的 `key=value` 语法：
+
+译者注：为了安全起见，请将 `.env` 文件添加到 git 忽略配置中
+
+..env
+[source, env]
+----
+APP_SECRET=F7op5n9vx1nAkno0DsNgZm5vjNXpOLIq
+DB_HOST=127.0.0.1
+DB_USER=root
+----
+
+你可以使用 **Env Provider** 访问 env 值：
+
+[source, js]
+----
+const Env = use('Env')
+const appSecret = Env.get('APP_SECRET')
+----
+
+和 **Config Provider**一样，你可以提供一个默认值作为第二个参数：
+
+[source, js]
+----
+Env.get('DB_USER', 'root')
+----
+
+`Env.get` 总是返回一个 `string`。如果你希望某个 Env 值充当布尔值，则需要通过条件相等语句进行检查，例如:
+
+[source, js]
+----
+const myBoolean = Env.get('MY_BOOLEAN') === 'true'
+----
+
+=== 如果所需的环境变量不存在，则会引发错误
+
+当你有运行应用程序所需的环境变量时，如果未设置所需的变量，可以用 `Env.getOrFail()` 来抛出错误。
+
+提示：如果你希望缺少环境变量的应用程序在引导时能快速失败，**只限从配置文件中访问环境变量**，并且不要在应用程序的其他任何位置使用  Env Provider
+
+[source, js]
+----
+const Env = use('Env')
+// 抛出 "Make sure to define APP_SECRET inside .env file."
+// “请确保在.env文件中定义了app_secret”
+Env.getOrFail('APP_SECRET')
+----
+
+=== .env 文件的位置
+
+你可能想要加载一个不同的 `.env` 文件。
+
+你可以通过 `ENV_PATH` 环境变量来完成：
+
+[source, bash]
+----
+> ENV_PATH=/user/.env adonis serve
+----
+
+=== 禁用 .env 文件
+
+你可能希望直接在服务器上使用环境变量，而不是中继到文件。
+
+你可以通过使用 `ENV_SILENT` 环境变量来完成：
+
+[source, bash]
+----
+> ENV_SILENT=true adonis serve
+----
+
+=== 测试环境
+
+如果你在 `NODE_ENV` 设置为 `testing` 的情况下启动应用程序， AdonisJs 将加载你的 `.env.testing` 文件并会将其合并到 `.env` 文件中。
+
+这对于测试代码库时设置不同凭证非常有用。

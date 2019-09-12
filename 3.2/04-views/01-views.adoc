@@ -1,0 +1,373 @@
+---
+permalink: views
+categories:
+- 视图
+---
+= 视图
+
+toc::[]
+
+AdonisJs使用了一个很优秀的模板引擎link:http://mozilla.github.io/nunjucks/templating.html[nunjucks, window="_blank"]. 不仅集成了原有的nunjucks模板, 还添加了一些AdonisjJs独有的功能.
+
+== 视图怎么工作的?
+
+[pretty-list]
+* 视图都存放在`resources/views`目录里.
+* 他们的后缀名都应该是`.njk`.
+* 你可以通过命令行生成视图文件.
++
+[source, bash]
+----
+./ace make:view welcome
+
+# create: resources/views/welcome.njk
+----
+* 你可以在视图文件夹里面任意添加文件夹来管理你的视图, 比如 *layouts* 和 *partials*.
+* 你可以通过设置`.env`文件里面的 *CACHE_VIEWS=true*来启用模板缓存.
+
+== 小例子
+我们来看一个渲染视图的小例子(包含路由和控制器):
+
+.路由
+[source, javascript]
+----
+const Route = use('Route')
+Route.get('/greet/:user', 'UserController.greet')
+----
+
+.控制器
+[source, javascript]
+----
+class UserController {
+
+  * greet (request, response) {
+    const user = request.param('user')
+    yield response.sendView('greet',  { user })
+  }
+
+}
+----
+
+.视图
+[source, twig]
+----
+<h2> Hello {{ user }} </h2>
+----
+
+== 渲染视图
+视图可以通过`response`对象渲染, 或者直接使用`View`服务.
+
+NOTE: 在你能访问到`response`对象的时候, 推荐使用`response.sendView`方法.
+
+==== make(templatePath, data)
+(译者添加: 通过视图渲染, 并得到渲染后的结果)
+[source, javascript]
+----
+const View = use('View')
+const compiledHtml = yield View.make('welcome')
+----
+
+==== makeString(templateString, data)
+(译者添加: 从字符串渲染视图, 并得到渲染后的结果)
+[source, javascript]
+----
+const View = use('View')
+const compiledHtml = View.makeString('<h2> Hello {{ username }} </h2>', {username: 'virk'})
+----
+
+填写视图文件路径时, 不需要添加*.njk*这个后缀名, 并且, 你可以用*点(.)*来访问子文件夹里面的视图.
+
+[options="header"]
+|====
+| Path | Referenced As
+| resources/views/home.njk  | response.sendView('home')
+| resources/views/user/list.njk | response.sendView('user.list')
+|====
+
+== 制作模板
+制作模板的过程是在视图里面填写上需要动态生成的数据和逻辑处理, 在制作模板时你需要用特殊的符号来标记这些数据和逻辑.
+
+=== 变量
+如果你想输出一个变量, 你需要把这个变量用花括号包裹起来.
+
+[source, twig]
+----
+{{ user }}
+{{ user.firstname }}
+{{ user['firstname'] }}
+----
+
+=== 条件
+如果你想执行一个判断条件, 你需要用花括号和百分号包裹起来.
+
+[source, twig]
+----
+{% if user.age %}
+  You are {{ user.age }} years old.
+{% endif %}
+----
+
+你不仅可以使用`if`语句, 你也可以使用`if`, `else`, `elseif`.
+
+[source, twig]
+----
+{% if hungry %}
+  I am hungry
+{% elif tired %}
+  I am tired
+{% else %}
+  I am good!
+{% endif %}
+----
+
+=== 过滤器
+过滤器可以按照你的想法处理你的数据.
+
+[source, twig]
+----
+{# username = 'john' #}
+{{ username | capitalize }}
+
+{# output = John #}
+----
+
+这里的`capitalize`是一个把你的字符串数据首字母变成大写的过滤器. 更多的过滤器你可以看这里link:templating#_filters[filters].
+
+== 继承
+继承就是扩展一个视图并且修改或替换其中的一部分, 和Java类里面的继承差不太多~.
+
+我们来看个继承的例子.
+
+.resources/views/master.njk
+[source, twig]
+----
+<html>
+  <body>
+
+    <header class="header">
+      {% block header %}
+        我很帅
+      {% endblock %}
+    </header>
+
+    <section class="sidebar">
+      {% block sidebar %}
+        我很无敌
+      {% endblock %}
+    </section>
+
+    <section class="content">
+      {% block content %}{% endblock %}
+    </section>
+
+  </body>
+</html>
+----
+
+.resources/views/home.njk
+[source, twig]
+----
+{% extends 'master' %}
+
+{% block content %}
+  我最牛逼
+{% endblock %}
+----
+
+.结果
+[source, html]
+----
+<html>
+  <body>
+
+    <header class="header">
+      我很帅
+    </header>
+
+    <section class="sidebar">
+      我很无敌
+    </section>
+
+    <section class="content">
+      我最牛逼
+    </section>
+
+  </body>
+</html>
+----
+
+这里是几个继承模板的注意事项:
+
+1. 你必须要有一个可继承的代码块(block) *{% block <name> %}* .
+2. 每个代码块必须要有一个独一无二的名字.
+3. 继承模板后, 你是不能在父模板代码块之外的地方插入内容的.
+
+== 包含(include)
+你可以让你的模板包含几个其他模板里面的内容, 你可以用此来制作一些可重复使用的小模板.
+
+我们用聊天程序来作为一个例子, 我们打包了一个聊天信息框.
+
+.resources/views/chat/message.njk
+[source, twig]
+----
+<div class="chat__message">
+  <h2> {{ message.from }} </h2>
+  <p> {{ message.body }} </p>
+</div>
+----
+
+现在, 你可以在你的index模板里面, 用循环输出多个聊天框, 这样你就复用了你打包的聊天框.
+
+.resources/views/chat/index.njk
+[source, twig]
+----
+{% for message in messages %}
+  {% include 'message' %}
+{% endfor %}
+----
+
+NOTE: 被导入的模板共享了相同父模板作用域.
+
+== 宏 & 导入
+宏可以帮助你简单的创建可复用的元件. 使用宏和包含模板的区别是, 你可以给宏传入一些数据, 来改变它.
+
+我们来看个按钮的小例子, 我们这里用了bootstrap (css框架).
+
+.resource/views/macros/button.njk
+[source, twig]
+----
+{% macro button(value, style='default') %}
+  <button type="button" class="btn btn-{{style}}"> {{ value }} </button>
+{% endmacro %}
+----
+
+我们现在可以用import来导入一个宏.
+
+.resources/views/home.njk
+[source, twig]
+----
+{% from 'macros.button' import button %}
+{{ button('Create User', 'primary') }}
+----
+
+== 使用全局数据/方法
+全局数据/方法可以被所有模板获取, AdonisJs有一些内置的全局数据, 一些第三方模块和服务也可能包含全局数据.
+
+=== 注册一个你自己网站专用的全局数据/方法
+最好的注册方法是在程序的`start`事件监听器里面添加你的视图全局数据/方法.
+
+.app/Listeners/Http.js
+[source, javascript]
+----
+Http.onStart = function () {
+  const View = use('View')
+  View.global('time', function () {
+    return new Date().getTime()
+  })
+}
+----
+
+=== 通过服务注册
+如果你想为AdonisJs写一个模块或插件, 你可以在你服务提供文件(service provider)的`boot`方法里添加.
+
+[source, javascript]
+----
+const ServiceProvider = require('adonis-fold').ServiceProvider
+
+class MyServiceProvider extends ServiceProvider {
+
+  boot () {
+    const View = use('Adonis/Src/View')
+    View.global('time', function () {
+      return new Date().getTime()
+    })
+  }
+
+  * register () {
+    // register bindings
+  }
+
+}
+----
+
+现在你就可以在模板里面访问你定义的全局数据/函数了.
+
+[source, twig]
+----
+{{ time() }}
+----
+
+== 制作过滤器
+和全局数据/方法一样, 你也可以制作你自己的过滤器. 过滤器的作用是根据你的要求处理一个变量, 这些是内置的过滤器link:templating#_filters[filters].
+
+TIP: 过滤器可以在`Http.start`事件监听器里面添加, 或者在服务提供文件`boot`里面添加 xref:_working_with_globals[globals].
+
+.注册一个过滤器
+[source, javascript]
+----
+const View = use('Adonis/Src/View')
+const accounting = use('accounting') // npm module
+
+View.filter('currency', function (amount, symbol) {
+  return accounting.formatMoney(amount, {symbol})
+})
+----
+
+.使用一个过滤器
+[source, twig]
+----
+{{ 1000 | currency('$') }}
+
+{# returns $1,000.00 #}
+----
+
+== 注入服务
+你可以在视图里面使用服务或者任何用IoC绑定过的东西. 我们来看一个直接在模板里面查询用户的小例子.
+
+[source, twig]
+----
+{% set User = use('App/Model/User') %}
+{% yield users = User.all() %}
+
+{% for user in users.toJSON()   %}
+  {{ user.username }}
+{% endfor %}
+----
+
+NOTE: 当你的模板可以被外界编辑的时候, 注入服务可能出现 *安全漏洞(security holes)*. 比如:一个黑客在你模板里面注入代码, 清空了你的数据库 *如果你不想使用注入服务记得把 injectServices 设置为false*
+
+.config/app.js
+[source, javascript]
+----
+views: {
+  injectServices: false
+}
+----
+
+== 缓存
+在`config/app.js`文件里, 你可以管理视图缓存, 建议你在开发的时候关闭缓存, 在线上运行环境开启缓存.
+
+.config/app.js
+[source, javascript]
+----
+view: {
+  cache: Env.get('CACHE_VIEWS', true)
+}
+----
+
+.(.env)
+[source, bash]
+----
+CACHE_VIEWS=true
+----
+
+== 语法高亮
+你需要在你的编辑器/IDE里面安装*nunjucks*模板的语法高亮插件.
+如果你的编辑器没有*nunjucks*模板语法高亮插件, 你可以使用*twig*模板高亮插件代替.
+
+[support-list]
+* link:https://atom.io/packages/language-nunjucks[Atom, window="_blank"].
+* link:https://packagecontrol.io/packages/PHP-Twig[Sublime Text( Via Twig ), window="_blank"].
+* link:https://plugins.jetbrains.com/plugin/7303?[Webstorm( Via Twig ), window="_blank"].
+* link:https://github.com/axelboc/nunjucks-brackets/[Brackets, window="_blank"].
+* link:https://marketplace.visualstudio.com/items?itemName=ronnidc.nunjucks[Visual Studio Code, window="_blank"].

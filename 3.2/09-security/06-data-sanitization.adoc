@@ -1,0 +1,303 @@
+---
+permalink: data-sanitization
+categories:
+- 安全
+---
+= 数据过滤
+
+toc::[]
+
+AdonisJs会自动尝试通过阻止SQL注入来保护您的网站安全，并在视图内转义HTML并限制文件上传的大小。不过，有些情况下，您需要在接收之前对用户输入进行校验。
+
+== 设置
+AdonisJs提供了一个方便的数据校验，用于从用户输入过滤恶意数据。Sanitizer是`adonis-validation-provider`模块的一部分。
+
+==== 安装
+[source, bash]
+----
+npm i --save adonis-validation-provider
+----
+
+==== 注册Provider
+Providers在`bootstrap/app.js`文件中注册。一旦注册，您可以在应用程序的任何位置访问它们。
+
+.bootstrap/app.js
+[source, javascript]
+----
+const providers = [
+  // ...
+  'adonis-validation-provider/providers/ValidatorProvider'
+  // ...
+]
+----
+
+==== 验证器别名
+让我们为验证器命名空间创建一个别名，这样可以更轻松地使用较小的名称导入Validator。
+
+.bootstrap/app.js
+[source, javascript]
+----
+const aliases = {
+  // ...
+  Validator: 'Adonis/Addons/Validator'
+  // ...
+}
+----
+
+== 基本例子
+校验数据是如此简单，您只需要定义校验规则，并将数据与定义的规则一起传递。
+
+[source, javascript]
+----
+const Validator = use('Validator')
+
+/**
+ * Defining sanitization rules
+ */
+const sanitizationRules = {
+  email: 'normalize_email',
+  about_me: 'escape'
+}
+
+Route.post('/', function * (request, response) {
+  const user = request.only('email', 'about_me')
+  const sanitizedUser = Validator.sanitize(user, sanitizationRules)
+})
+----
+
+这是那么简单！您首先设置一个规则对象，并确保返回干净的数据。此外，您可以直接通过调用它们作为函数来利用规则。
+
+[source, javascript]
+----
+const Validator = use('Validator')
+
+const escapedEmail = Validator.sanitizor.normalizeEmail('bar.sneaky+foo@googlemail.com')
+// returns - barsneaky@gmail.com
+----
+
+== 可用过滤器
+以下是所有可用过滤器的列表。
+
+==== blacklist(input, keywords)
+从输入字符串中删除定义的单词
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.blacklist('This is the worst show', ['worst'])
+
+// Via Schema
+{
+  comment: 'blacklist:worst'
+}
+----
+
+==== escape(value)
+转义html实体。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.escape('<div> Hello World </div>')
+
+// Via Schema
+{
+  comment: 'escape'
+}
+----
+
+==== normalizeEmail(value)
+通过删除不必要的字符来规范电子邮件。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.normalizeEmail('bar.sneaky+foo@gmail.com')
+
+// Via Schema
+{
+  email: 'normalize_email'
+}
+----
+
+==== toBoolean(value)
+将值转换为布尔值。*0* , *false*, *null*, *undefined*, *''*将返回false，其他所有内容都将返回true。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.toBoolean('false')
+
+// Via Schema
+{
+  isAdmin: 'to_boolean'
+}
+----
+
+==== toFloat(value)
+将值转换为float，如果无法转换返回`NaN`。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.toFloat('32.55')
+
+// Via Schema
+{
+  marks: 'to_float'
+}
+----
+
+==== toInt(value)
+将值转换为整数，如果无法转换，则返回`NaN`。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.toInt('32')
+
+// Via Schema
+{
+  age: 'to_int'
+}
+----
+
+==== toDate(value)
+将值转换为date对象，如果无法转换，则返回`null`。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.toDate('2010-22-10')
+
+// Via Schema
+{
+  age: 'to_date'
+}
+----
+
+==== stripLinks(value)
+从给定的字符串中删除`<a></a>`标签。如果输入不是字符串，则返回实际值。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.stripLinks('<a href="http://adonisjs.com"> Adonisjs </a>')
+
+// Via Schema
+{
+  bio: 'strip_links'
+}
+----
+
+==== stripTags(value)
+从给定的字符串中剥离HTML标签。如果输入不是字符串，则返回实际值。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.stripTags('<p> Hello </p>')
+
+// Via Schema
+{
+  tweet: 'strip_tags'
+}
+----
+
+==== plural(value)
+将给定值转换为复数。这意味着*person*将被转换为*people*。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.plural('child')
+
+// Via Schema
+{
+  november14: 'plural'
+}
+----
+
+==== singular(value)
+将给定值转换为单数。这意味着*people*将被转换为*person*。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.plural('children')
+
+// Via Schema
+{
+  november14: 'singular'
+}
+----
+
+==== camelCase(value)
+将一个给定的字符串转换成驼峰式。这意味着`users-controller`将成为`UsersController`。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.camelCase('users-controller')
+
+// Via Schema
+{
+  fileName: 'camel_case'
+}
+----
+
+==== capitalize(value)
+大写一个给定的字符串。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.capitalize('doe')
+
+// Via Schema
+{
+  fullName: 'capitalize'
+}
+----
+
+==== decapitalize(value)
+减少一个给定的字符串。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.decapitalize('Bar')
+
+// Via Schema
+{
+  username: 'decapitalize'
+}
+----
+
+==== title(value)
+将值转换为标题大小写。 这意味着`hello-world`将成为`Hello World`。
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.title('hello-world')
+
+// Via Schema
+{
+  title: 'title'
+}
+----
+
+==== slug(value)
+将值转换为友好的URL
+
+[source, javascript]
+----
+// Directly
+Validator.sanitizor.slug('Learn AdonisJs In 30 Minutes')
+
+// Via Schema
+{
+  title: 'slug'
+}
+----

@@ -1,0 +1,251 @@
+---
+permalink: seeds-and-factories
+categories:
+- 数据库
+---
+= 填充和工厂
+
+toc::[]
+
+link:migrations[迁移]可以帮助您自动化设置数据库模式的过程。数据库*Seeds & Factories*有助于使用虚拟数据填充数据库。可以在运行测试或设置应用程序的初始状态时使用虚拟数据。
+
+== 关于填充
+[pretty-list]
+1. 填充存储在`database/seeds`目录下。
+2. 每个填充文件都是一个*ES2015*类，必须有一个`run`方法。
+3. 可以使用单个填充文件为多个数据库表添加虚拟数据。
+4. 使用`db:seed`命令从`database/seeds`目录中执行所有的填充文件。
+
+== 关于工厂
+[pretty-list]
+1. 工厂帮助您使用假数据定义模型blueprint。
+2. 每个blueprint*callback*接收一个实例link:http://chancejs.com[chancejs, window="_blank"]来生成随机/假的数据。
+3. 可以使用`use('Factory')Provider在填充文件里面使用工厂。
+4. 编写自动化测试时也可以使用工厂。
+
+== 基本例子
+我们从一个使用*Factories* and *Seeds*的示例开始，将虚拟数据添加到`users`表中。
+
+.database/factory.js
+[source, javascript]
+----
+const Factory = use('Factory')
+
+Factory.blueprint('App/Model/User', (fake) => {
+  return {
+    username: fake.username(),
+    email: fake.email(),
+    password: fake.password(),
+    firstName: fake.first(),
+    lastName: fake.last()
+  }
+})
+----
+
+.database/seeds/Database.js
+[source, javascript]
+----
+'use strict'
+
+const Factory = use('Factory')
+
+class DatabaseSeeder {
+  * run () {
+    yield Factory.model('App/Model/User').create(5)
+  }
+}
+
+module.exports = DatabaseSeeder
+----
+
+.运行填充命令
+[source, bash]
+----
+./ace db:seed
+----
+
+我们从`database/factory.js`文件中定义`User`模型的蓝图。每个蓝图方法都应该使用*Model create*方法返回定义要插入到数据库表中的字段的对象。
+
+由于工厂blueprints被定义一次并且随处可见，所以我们需要在`database/seeds/Database.js`文件中导入`Factory`提供程序，然后执行`create`方法传递给它的行数
+
+== 工厂方法
+
+=== 使用Lucid时
+使用清晰的模型，您可以使用以下方法在应用程序中定义和使用blueprint。
+
+==== blueprint(modelNamespace, callback)
+NOTE: 确保相应的模型存在。
+
+[source, javascript]
+----
+Factory.blueprint('App/Model/User', (fake) => {
+  return {
+    username: fake.username()
+  }
+})
+----
+
+==== create([rows=1])
+给定模型创建的行数。
+
+[source, javascript]
+----
+const users = yield Factory.model('App/Model/User').create(5)
+----
+
+==== make([count=1])
+`make`方法将以假数据作为属性返回模型的实例。您可以更改`count`以获取多个实例的数组。
+
+[source, javascript]
+----
+const User = use('App/Model/User') <1>
+const user = yield User.find(1) <2>
+
+const post = Factory.model('App/Model/Post').make() <3>
+yield user.posts().create(post) <4>
+----
+
+<1> 导入用户模型
+<2> 使用该ID查找单个用户。
+<3> 使用虚拟数据创建`Post`模型的实例。
+<4> 使用关系保存给定用户的文章。
+
+
+==== each(callback)
+`each`方法可以帮助您在创建的模型实例上运行异步循环。当您要为每个创建的实例保存关系时，这是有帮助的
+
+[source, javascript]
+----
+const users = yield Factory.model('App/Model/User').create(5)
+
+users.each(function * (user) {
+  const post = Factory.model('App/Model/Post').make()
+  yield user.posts().save(post);
+})
+----
+
+==== 重置
+清空给定模型的表
+
+[source, javascript]
+----
+yield Factory.model('App/Model/User').reset()
+----
+
+=== 使用数据库Provider时
+
+==== blueprint(tableName, callback)
+
+[source, javascript]
+----
+Factory.blueprint('users', (fake) => {
+  return {
+    username: fake.username(),
+    email: fake.email(),
+    password: fake.password()
+  }
+})
+----
+
+==== create([rows=1])
+The create methods works same as the 
+创建方法与外部参照相同xref:_create_rows_1[Lucid blueprint创建方法]
+
+[source, javascript]
+----
+yield Factory.get('users').create(5)
+----
+
+==== table(tableName)
+`table`方法可以帮助您在运行时切换给定blueprint的表名。
+
+[source, javascript]
+----
+yield Factory.get('users').table('my_users').create(5)
+----
+
+==== returning(column)
+定义*PostgreSQL的返回列。
+
+[source, javascript]
+----
+yield Factory.get('users').returning('id').create(5)
+----
+
+==== 重置
+截断数据库表。
+
+[source, javascript]
+----
+yield Factory.get('users').reset()
+----
+
+== 生成假数据a
+传递`fake`对象给xref:[Factory.blueprint]方法的一个实例link:http://chancejs.com[chance.js, window="_blank"]。
+
+来自chancejs的所有方法都由AdonisJs支持，而AdonisJs也添加了一大堆新方法。
+
+==== username([length=5])
+返回具有定义长度的随机用户名。
+
+[source, javascript]
+----
+Factory.blueprint('App/Model/User', (fake) => {
+  return {
+    username: fake.username()
+  }
+})
+----
+
+==== password([length=20])
+返回具有定义长度的随机密码。
+
+[source, javascript]
+----
+Factory.blueprint('App/Model/User', (fake) => {
+  return {
+    password: fake.password()
+  }
+})
+----
+
+== 密码哈希
+link:authentication[验证]Provider在验证用户密码时使用link:encryption-and-hashing[哈希]Provider。在保存数据库之前，请确保您已经将密码散列。
+
+The best place to hash the password is inside a Model `beforeCreate` hook. You can learn about hooks link:lucid-hooks[here].
+把密码哈希的最佳位置是模型`beforeCreate`钩子。你可以了解钩子link:lucid-hooks[这里].。
+
+.生成钩子
+[source, bash]
+----
+./ace make:hook User
+----
+
+.Model/Hooks/User.js
+[source, javascript]
+----
+'use strict'
+const Hash = use('Hash')
+
+const User = exports = module.exports = {}
+
+User.encryptPassword = function * (next) {
+  this.password = yield Hash.make(this.password)
+  yield next
+}
+----
+
+.向模型注入钩子
+[source, javascript]
+----
+'use strict'
+
+const Lucid = use('Lucid')
+
+class User extends Lucid {
+  static boot () {
+    super.boot()
+    this.addHook('beforeCreate', 'User.encryptPassword')
+  }
+}
+----
