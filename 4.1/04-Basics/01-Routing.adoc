@@ -8,13 +8,13 @@ category: 基础
 
 toc::[]
 
-Routes enable the outside world to interact with your app via URLs.
+路由使得外界能够通过 URL 与你的应用进行交互。
 
-Routes are registered inside the `start/routes.js` file.
+路由在 `start/routes.js` 文件中注册。
 
 == 基本路由
 
-The most basic route binding requires a URL and a closure:
+最基本的路由绑定需要一个 URL 和一个闭包：
 
 .start/routes.js
 [source, js]
@@ -22,9 +22,9 @@ The most basic route binding requires a URL and a closure:
 Route.get('/', () => 'Hello Adonis')
 ----
 
-The return value of the closure will be sent back to the client as a response.
+闭包的返回值将作为响应发送回客户端。
 
-You can also bind a route to a controller using a `controller.method` signature:
+你还可以使用 `controller.method` 签名的方式将路由绑定到控制器：
 
 .start/routes.js
 [source, js]
@@ -32,11 +32,11 @@ You can also bind a route to a controller using a `controller.method` signature:
 Route.get('posts', 'PostController.index')
 ----
 
-The above signature `PostController.index` refers to the `App/Controllers/Http/PostController.js` file's `index` method.
+以上的签名 `PostController.index` 指的是 `App/Controllers/Http/PostController.js` 文件的 `index` 方法。
 
 === 可用的路由方法
 
-Resourceful routes use different HTTP verbs to indicate the type of request:
+资源路由使用不同的 HTTP 动词来指示请求的类型：
 
 [source, js]
 ----
@@ -47,7 +47,7 @@ Route.patch(url, closure)
 Route.delete(url, closure)
 ----
 
-To register a route that responds to multiple verbs, use `Route.route`:
+要注册一个相应多个动词的路由，请使用 `Route.route`：
 
 [source, js]
 ----
@@ -56,20 +56,20 @@ Route.route('/', () => {
 }, ['GET', 'POST', 'PUT'])
 ----
 
-To render a view directly (e.g. static pages), use `Route.on.render`:
+要直接渲染视图 (例如：静态页面)，请使用 `Route.on.render`：
 
 [source, js]
 ----
 Route.on('/').render('welcome')
 ----
 
-In the example above, when the root `/` route is loaded, the `resources/view/welcome.edge` file is rendered directly.
+在以上的实力最后你，当路由 `/` 加载是，将直接显示 `resources/view/welcome.edge` 视图文件。
 
 == 路由参数
 
 === 必要参数
 
-For dynamic routes, you can define route parameters like so:
+对于动态路由，你可以这样定义路由参数：
 
 .start/routes.js
 [source, js]
@@ -79,30 +79,30 @@ Route.get('posts/:id', ({ params }) => {
 })
 ----
 
-In the example above, `:id` is a route parameter.
+以上示例中, `:id` 是一个路由参数。
 
-Its value is then retrieved via the `params` object.
+然后通过 `params` 对象检索其值。
 
 === 可选参数
 
-To define an optional route parameter, append a `?` symbol to its definition:
+要定义可选的路由参数，请在定义结尾附加一个 `?` 符号：
 
 .start/routes.js
 [source, js]
 ----
 Route.get('make/:drink?', ({ params }) => {
-  // use Coffee as fallback when drink is not defined
+  // 未定义 drink 时，使用 Coffee 作为备用
   const drink = params.drink || 'Coffee'
 
   return `One ${drink}, coming right up!`
 })
 ----
 
-In the example above, `:drink?` is an optional route parameter.
+以上示例中，`:drink?` 是一个可选的路由参数。
 
 == 通配路由
 
-You may want to render a single view from the server and handle routing using your preferred front-end framework:
+你可能希望从服务器呈现单个视图，并使用你喜欢的前端框架处理路由：
 
 .start/routes.js
 [source, js]
@@ -110,7 +110,7 @@ You may want to render a single view from the server and handle routing using yo
 Route.any('*', ({ view }) => view.render('...'))
 ----
 
-Any specific routes need to be defined before your wildcard route:
+任何特定的路由都需要在通配路由之前定义：
 
 .start/routes.js
 [source, js]
@@ -122,9 +122,9 @@ Route.any('*', ({ view }) => view.render('...'))
 
 == 命名路由
 
-Though routes are defined inside the `start/routes.js` file, they are referenced everywhere else in the application (e.g. using the `views` route helper to make a URL for a given route).
+虽然路由是在 `start/routes.js` 文件中定义的，但它们在应用程序中的其他位置都被引用（例如，使用 `views` 路由助手为给定路由创建 URL）。
 
-By using the `as()` method, you can assign your route a unique name:
+通过使用该 `as()` 方法，你可以为路由指定唯一名称：
 
 .start/routes.js
 [source, js]
@@ -132,14 +132,14 @@ By using the `as()` method, you can assign your route a unique name:
 Route.get('users', closure).as('users.index')
 ----
 
-This will enable you to use `route` helpers in your templates and code, like so:
+这将使你能够在模板和代码中使用 `route` 助手，如下所示：
 
 [source, html]
 ----
-<!-- before -->
+<!-- 之前 -->
 <a href="/users">List of users</a>
 
-<!-- after -->
+<!-- 之后 -->
 <a href="{{ route('users.index') }}">List of users</a>
 ----
 
@@ -150,7 +150,7 @@ foo ({ response }) {
 }
 ----
 
-Both `route` helpers share the same signature and accept an optional parameters object as their second argument:
+两个 `route` 助手共享相同的签名，并接受一个可选的参数对象作为第二个参数：
 
 [source, js]
 ----
@@ -159,7 +159,7 @@ Route.get('posts/:id', closure).as('posts.show')
 route('posts.show', { id: 1 })
 ----
 
-`route` helpers also accept a optional parameters object as third argument, it will handle `protocol`, `domain` and `query` options:
+`route` 助手还可以接受一个可选的参数对象作为第三个参数，它将处理 `protocol`, `domain` 和 `query` 选项：
 
 [source, js]
 ----
@@ -167,19 +167,19 @@ route('posts.show', { id: 1 }, {
   query: { foo: 'bar' }
 });
 
-// resulting in /post/1?foo=bar
+// 产生 /post/1?foo=bar
 
-// Without parameters:
+// 没有参数：
 route('auth.login', null, {
   domain: 'auth.example.com',
   protocol: 'https',
   query: { redirect: '/dashboard' }
 });
 
-// resulting in https://auth.example.com/login?redirect=%2Fdashboard
+// 产生 https://auth.example.com/login?redirect=%2Fdashboard
 ----
 
-The same rules apply for the view.
+这些规则也适用于视图。
 
 [source, html]
 ----
@@ -189,9 +189,9 @@ The same rules apply for the view.
 
 == 路由格式
 
-Route formats open up a new way for link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation[content negotiation, window="_blank"], where you can accept the response format as part of the URL.
+路由格式为 link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation[content negotiation, window="_blank"] 开辟了一种新的方式，你可以在其中接受响应格式作为 URL 的一部分。
 
-A route format is a contract between the client and server for what type of response to return:
+路由格式是客户端和服务器之间为返回哪种类型的响应而签订的协定：
 
 .start/routes.js
 [source, js]
@@ -207,7 +207,7 @@ Route.get('users', async ({ request, view }) => {
 }).formats(['json'])
 ----
 
-For the example above, the `/users` endpoint will be able to respond in multiple formats based on the URL:
+对于以上示例， `/users` 端点将能够基于 URL 以多种格式进行响应：
 
 [source, bash]
 ----
@@ -215,7 +215,7 @@ GET /users.json     # Returns an array of users in JSON
 GET /users          # Returns the view in HTML
 ----
 
-You can also disable the default URL and force the client to define the format:
+你还可以禁用默认 URL 并强制客户端定义格式：
 
 .start/routes.js
 [source, js]
@@ -223,21 +223,21 @@ You can also disable the default URL and force the client to define the format:
 Route.get('users', closure).formats(['json', 'html'], true)
 ----
 
-Passing `true` as the second argument ensures the client specifies one of the expected formats. Otherwise, a 404 error is thrown.
+将 `true` 作为第二个参数传递可以确保客户端指定一种预期格式。否则，抛出一个 404 错误。
 
 == 路由资源
 
-You will often create resourceful routes to do CRUD operations on a resource.
+你通常会创建资源路由来对资源执行 CRUD 操作。
 
-`Route.resource` assigns CRUD routes to a controller using a single line of code:
+`Route.resource` 使用单行代码将 CRUD 路由分配给控制器：
 
 .start/routes.js
 [source, js]
 ----
-// This...
+// 这个...
 Route.resource('users', 'UserController')
 
-// ...equates to this:
+// ...等同于:
 Route.get('users', 'UserController.index').as('users.index')
 Route.post('users', 'UserController.store').as('users.store')
 Route.get('users/create', 'UserController.create').as('users.create')
@@ -248,9 +248,9 @@ Route.get('users/:id/edit', 'UserController.edit').as('users.edit')
 Route.delete('users/:id', 'UserController.destroy').as('users.destroy')
 ----
 
-NOTE: This feature is only available when binding routes to a link:controllers[Controller].
+NOTE: 此功能仅在将路由绑定到 link:controllers[Controller] 时可用。
 
-You can also define nested resources:
+你还可以定义资源嵌套：
 
 .start/routes.js
 [source, js]
@@ -260,11 +260,11 @@ Route.resource('posts.comments', 'PostCommentController')
 
 === 资源过滤
 
-You can limit the routes assigned by the `Route.resource` method by chaining one of the filter methods below.
+你可以通过连缀下面的某个筛选方法来限制 `Route.resource` 方法分配的路由。
 
 ==== apiOnly
 
-Removes `GET resource/create` and `GET resource/:id/edit` routes:
+移除 `GET resource/create` and `GET resource/:id/edit` 路由：
 
 .start/routes.js
 [source, js]
@@ -275,7 +275,7 @@ Route.resource('users', 'UserController')
 
 ==== only
 
-Keeps only the passed routes:
+仅保留指定的路由：
 
 .start/routes.js
 [source, js]
@@ -286,7 +286,7 @@ Route.resource('users', 'UserController')
 
 ==== except
 
-Keeps all routes except the passed routes:
+保留指定路由之外的所有路由：
 
 .start/routes.js
 [source, js]
@@ -297,7 +297,7 @@ Route.resource('users', 'UserController')
 
 === 资源中间件
 
-You can attach middleware to any resource as you would with a single route:
+你可以像使用单个路由一样将中间件附加到资源路由：
 
 .start/routes.js
 [source, js]
@@ -306,7 +306,7 @@ Route.resource('users', 'UserController')
   .middleware(['auth'])
 ----
 
-If you don't want to attach middleware to all routes generated via `Route.resource`, you can customize this behavior by passing a `Map` to the `middleware` method:
+如果你不想将中间件附加到通过 `Route.resource` 生成的所有路由，你可以通过传递 `Map` 给 `middleware` 方法来自定义此行为：
 
 .start/routes.js
 [source, js]
@@ -317,11 +317,11 @@ Route.resource('users', 'UserController')
   ]))
 ----
 
-In the example above, the auth middleware is only applied to the store, update and destroy routes.
+以上示例最后你，auth 中间件仅应用于存储、更新和销毁路由
 
 === 资源格式
 
-You can define response formats for resourceful routes via the `formats` method:
+你可以通过 formats 方法为资源路由定义响应格式：
 
 .start/routes.js
 [source, js]
@@ -332,13 +332,13 @@ Route.resource('users', 'UserController')
 
 == 路由域
 
-Your application may use multiple domains.
+你的应用程序可能使用多个域。
 
-AdonisJs make it super easy to deal with this use-case.
+AdonisJs 可以轻易的处理此用例。
 
-Domains can be a static endpoint like `blog.adonisjs.com`, or a dynamic endpoint like `:user.adonisjs.com`.
+域可以是静态端点 `blog.adonisjs.com`，也可以是动态端点 `:user.adonisjs.com`。
 
-NOTE: You can define the domain on a single route as well.
+NOTE: 你也可以在单个路由上定义域。
 
 .start/routes.js
 [source, js]
@@ -350,20 +350,20 @@ Route.group(() => {
 }).domain(':user.myapp.com')
 ----
 
-In the example above, if you visited `virk.myapp.com`, you would see `The username is virk`.
+以上示例中，如果你访问 `virk.myapp.com`，你将会看到 `The username is virk`。
 
 == 路由组
 
-If your application routes share common logic/configuration, instead of redefining the configuration for each route, you can group them like so:
+如果你的路由共享公共逻辑/配置，则你可以这样对它们分组，而不需要为每个路由重新配置：
 
 .start/routes.js
 [source, js]
 ----
-// Ungrouped
+// 未分组
 Route.get('api/v1/users', closure)
 Route.post('api/v1/users', closure)
 
-// Grouped
+// 已分组
 Route.group(() => {
   Route.get('users', closure)
   Route.post('users', closure)
@@ -372,7 +372,7 @@ Route.group(() => {
 
 === 前缀
 
-Prefix all route URLs defined in the group:
+为组中定义的所有路由 URL 添加前缀：
 
 .start/routes.js
 [source, js]
@@ -385,7 +385,7 @@ Route.group(() => {
 
 === 中间件
 
-Assign one or many middleware to the route group:
+将一个或多个中间件分配给路由组：
 
 .start/routes.js
 [source, js]
@@ -395,24 +395,24 @@ Route.group(() => {
 }).middleware(['auth'])
 ----
 
-NOTE: Group middleware executes before route middleware.
+NOTE: 组中间件在路由中间件之前执行。
 
 === 命名空间
 
-Prefix the namespace of the bound controller:
+为绑定控制器的名称空间添加前缀：
 
 .start/routes.js
 [source, js]
 ----
 Route.group(() => {
-  // Binds '/users' to 'App/Controllers/Http/Admin/UserController'
+  // 将 '/users' 绑定到 'App/Controllers/Http/Admin/UserController'
   Route.resource('/users', 'UserController')
 }).namespace('Admin')
 ----
 
 === 格式
 
-Defines formats for all routes in the group:
+定义组内所有路由的格式：
 
 .start/routes.js
 [source, js]
@@ -424,6 +424,7 @@ Route.group(() => {
 
 === 域名
 
+指定哪个路由组属于哪个域：
 Specify which domain group routes belong to:
 
 .start/routes.js
