@@ -4,21 +4,21 @@ category: 基础
 permalink: controllers
 ---
 
-= Controllers
+= 控制器
 
 toc::[]
 
-While closures might be enough to handle route logic for small applications, when your application starts to grow, it becomes useful to organize application logic elsewhere.
+虽然闭包可能足以应付小型应用程序的路由逻辑，但是当应用程序开始增长时，在其他地方组织应用程序逻辑将变得非常有用。
 
-This is where Controllers come into play.
+这便是控制器发挥作用的地方。
 
-Controllers attach to one or many routes, grouping related request handling logic into single files, and are the common point of interaction between your models, views and any other services you may need.
+控制器连接一个或多个路由，将相关的请求处理逻辑分组到单个文件中，并且它是模型、视图和你可能需要的任何其他服务之间的共同交互点。
 
-NOTE: A controller's only job is to respond to a HTTP request. Do not use them internally by requiring them inside different files.
+NOTE: 控制器唯一的工作就是响应 HTTP 请求，不要在不同的文件中使用它们。
 
-== Creating Controllers
+== 创建控制器
 
-To create a new controller, use the `make:controller` command:
+要创建一个新的控制器，请使用 `make:controller` 命令：
 
 [source, bash]
 ----
@@ -32,7 +32,7 @@ To create a new controller, use the `make:controller` command:
 > adonis make:controller Admin/User
 ----
 
-This command creates a boilerplate file in the `App/Controllers/{TYPE}` folder:
+该命令将在 `App/Controllers/{TYPE}` 文件夹中创建一个样板文件：
 
 .app/Controllers/Http/UserController.js
 [source, js]
@@ -46,13 +46,13 @@ class UserController {
 module.exports = UserController
 ----
 
-TIP: Use the `--resource` flag to create a resourceful controller.
+TIP: 使用 `--resource` 标志创建一个资源控制器。
 
-== Using a Controller
+== 使用控制器
 
-A controller can only be accessed from a route.
+控制器只能从路由访问。
 
-This is done by referencing the controller as a **string** in your route definition:
+这是通过将控制器作为路由定义中的 **字符串** 引用来完成的：
 
 .app/routes.js
 [source, js]
@@ -60,11 +60,11 @@ This is done by referencing the controller as a **string** in your route definit
 Route.get(url, 'UserController.index')
 ----
 
-The part before the dot is a reference to the controller file (e.g. `UserController`), and is by default namespaced to `App/Controllers/Http`.
+点之前的部分是对控制器文件的引用（例如： `UserController`），默认命名空间为 `App/Controllers/Http`。
 
-The part after the dot is the name of the method you want to call inside this controller (e.g. `index`).
+点后面的部分是你要在此控制器内调用的方法的名称（例如：`index`）。
 
-For example:
+例如：
 
 .app/routes.js
 [source, js]
@@ -79,7 +79,7 @@ Route.post(url, 'Admin/UserController.store')
 Route.post(url, 'App/MyOwnControllers/UserController.index')
 ----
 
-As your defined controller methods are route handlers, they will receive the link:request-lifecycle#_http_context[HTTP Context] as an argument:
+由于你定义的控制器方法是路由处理程序，因此它们将接收 link:request-lifecycle#_http_context[HTTP Context] 作为参数：
 
 .app/Controllers/Http/UserController.js
 [source, js]

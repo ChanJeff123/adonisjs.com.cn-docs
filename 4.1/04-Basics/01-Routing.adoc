@@ -63,7 +63,7 @@ Route.route('/', () => {
 Route.on('/').render('welcome')
 ----
 
-在以上的实力最后你，当路由 `/` 加载是，将直接显示 `resources/view/welcome.edge` 视图文件。
+在以上的实力中，当路由 `/` 加载是，将直接显示 `resources/view/welcome.edge` 视图文件。
 
 == 路由参数
 
@@ -317,7 +317,7 @@ Route.resource('users', 'UserController')
   ]))
 ----
 
-以上示例最后你，auth 中间件仅应用于存储、更新和销毁路由
+以上示例中，auth 中间件仅应用于存储、更新和销毁路由
 
 === 资源格式
 
