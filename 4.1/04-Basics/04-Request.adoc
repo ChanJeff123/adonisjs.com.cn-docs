@@ -12,7 +12,7 @@ toc::[]
 
 TIP: 可以通过 `request.request` 访问 Node.js 的原始 `req` 对象。
 
-AdonisJs 将当前的 HTTP 请求对象作 link:request-lifecycle#_http_context[HTTP Context] 的一部分传递给所有路由处理程序和中间件：
+AdonisJs 将当前的 HTTP 请求对象作为 link:request-lifecycle#_http_context[HTTP Context] 的一部分传递给所有路由处理程序和中间件：
 
 [source, js]
 ----
@@ -49,7 +49,7 @@ const providers = [
 ]
 ----
 
-最后，在 `start/kernel.js` 文件最后你注册全局中间件：
+最后，在 `start/kernel.js` 文件中注册全局中间件：
 
 .start/kernel.js
 [source, js]

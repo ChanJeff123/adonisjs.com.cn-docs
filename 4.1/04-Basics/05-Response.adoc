@@ -4,15 +4,15 @@ title: 响应
 category: 基础
 ---
 
-= Response
+= 响应
 
 toc::[]
 
-This guide outlines how to use the link:https://github.com/adonisjs/adonis-framework/blob/develop/src/Response/index.js[HTTP Response, window="_blank"] object to make and return responses.
+本指南概述了如何使用 link:https://github.com/adonisjs/adonis-framework/blob/develop/src/Response/index.js[HTTP Response, window="_blank"] 来生成和返回响应。
 
-TIP: The Node.js raw `res` object can be accessed as `response.response`.
+TIP: 可以通过 `response.response` 访问 Node.js 的原始 `req` 对象。
 
-AdonisJs passes the current HTTP response object as part of the link:request-lifecycle#_http_context[HTTP Context] which is sent to all route handlers and middleware.
+AdonisJs 将当前的 HTTP 响应对象作为 link:request-lifecycle#_http_context[HTTP Context] 的一部分传递给所有路由处理程序和中间件：
 
 .start/routes.js
 [source, js]
@@ -22,8 +22,8 @@ Route.get('/', ({ response }) => {
 })
 ----
 
-== Basic example
-The following example returns an array of users in JSON format:
+== 基本例子
+以下示例以 JSON 格式返回用户数组：
 
 .start/routes.js
 [source, js]
@@ -34,7 +34,7 @@ Route.get('/users', async ({ response }) => {
 })
 ----
 
-The `response.json` method can also be used as an alias to `response.send`:
+`response.json` 方法也可用作 `response.send` 的别名：
 
 .start/routes.js
 [source, js]
@@ -44,10 +44,10 @@ Route.get('/users', async ({ response }) => {
 })
 ----
 
-== Making response
-As of 4.0, you can also `return` values from the route closure or controller method instead of using dedicated `response` methods.
+== 做出响应
+从 4.0 开始，你可以在路由的闭包或控制器方法中直接 `返回` 值，而不是使用专用的 `response` 方法。
 
-The following is equivalent to `response.send` or `response.json` but may feel more natural with a simple return statement:
+以下内容等同于 `response.send` 或 `response.json`，但使用简单的 return 语句感觉更自然：
 
 .start/routes.js
 [source, js]
@@ -57,10 +57,10 @@ Route.get('/', async () => {
 })
 ----
 
-=== Avoid callbacks
-Since the request/response lifecycle allows you to return values or call dedicated response methods, AdonisJs discourages the usage of callbacks entirely.
+=== 避免回调
+由于请求/响应声明周期允许你返回值或调用专用的响应方法，因此 AdonisJs 完全不鼓励使用回调。
 
-The following response sent inside a callback will not work:
+在回调中发送的以下响应将不起作用：
 
 .start/routes.js
 [source, js]
@@ -72,10 +72,10 @@ Route.get('/', async ({ response }) => {
 })
 ----
 
-The reason the above code won't work is because as soon as the route handler executes, AdonisJs ends the response – as the callback would get executed later, an error will occur!
+上述代码无法工作的原因是，一旦路由处理程序执行，AdonisJs 就会终止响应 - 因为稍后将执行回调，所以会发生错误！
 
-=== Promisfying callbacks
-What you can do instead is **promisify** your callback and use it with `await`:
+=== Promisify 回调
+相反，你可以  **promisify** 式你的回调，并将其与 `await` 一起使用：
 
 .start/routes.js
 [source, js]
@@ -89,12 +89,12 @@ Route.get('/', async ({ response }) => {
 })
 ----
 
-JavaScript has a rich ecosystem, and it is *100% possible* to write code without callbacks just by promisfying them, and as a community, we want to encourage this approach.
+JavaScript 拥有丰富的生态系统，只需要 **promisify** 式它们就可以 *100% 的* 编写没有回调的代码，作为一个社区，我们鼓励这种方法。
 
-=== But… I like my callbacks!
-If you still prefer callbacks, AdonisJs provides a way to continue using them.
+=== 但是… 我喜欢我的回调！
+如果你仍然喜欢回调，AdonisJs 提供一种继续使用它们的方法。
 
-Simply instruct the `response` object not to end implicitly:
+只需指示 `response` 对象不要隐式结束即可：
 
 .start/routes.js
 [source, js]
@@ -108,11 +108,11 @@ Route.get('/', async ({ response }) => {
 })
 ----
 
-== Headers
-Use the following methods to set/remove response headers.
+== 信息头
+使用以下方法设置/删除响应头（Headers）。
 
 ==== header
-Set a header value:
+设置 header 值：
 
 [source, js]
 ----
@@ -120,7 +120,7 @@ response.header('Content-type', 'application/json')
 ----
 
 ==== safeHeader
-Only set a header value if it does not already exist:
+仅设置 header 值，如果不存在：
 
 [source, js]
 ----
@@ -128,7 +128,7 @@ response.safeHeader('Content-type', 'application/json')
 ----
 
 ==== removeHeader
-Remove an existing header:
+删除现有的 header：
 
 [source, js]
 ----
@@ -136,7 +136,7 @@ response.removeHeader('Content-type')
 ----
 
 ==== type
-Set the `Content-Type` header:
+设置 `Content-Type` header:
 
 [source, js]
 ----
@@ -144,10 +144,10 @@ response.type('application/json')
 ----
 
 == Cookies
-Use the following methods to set/remove response cookies.
+使用以下方法设置/删除响应 cookies。
 
 ==== cookie
-Set a cookie value:
+设置 cookie 值：
 
 [source, js]
 ----
@@ -155,7 +155,7 @@ response.cookie('cartTotal', 20)
 ----
 
 ==== clearCookie
-Remove an existing cookie value (by setting its expiry in the past):
+删除现有的 cookie（通过将过期时间设为过去）：
 
 [source, js]
 ----
@@ -163,31 +163,31 @@ response.clearCookie('cartTotal')
 ----
 
 ==== plainCookie
-Since all cookies are encrypted and signed, it is not possible to read them from front-end JavaScript code.
+由于所有 cookie 都经过加密和签名，因此无法从前端 JavaScript 代码中读取它们。
 
-In that case, may want to set a plain cookie instead:
+这种情况下，可能想要设置一个普通的 cookie：
 
 [source, js]
 ----
-// not signed or encrypted
+// 未签名或加密
 response.plainCookie('cartTotal', 20)
 ----
 
-== Redirects
-Use one of the following methods to redirect requests to a different URL.
+== 重定向
+使用以下方法之一将请求重定向到其他 URL。
 
 ==== redirect(url, [sendParams = false], [status = 302])
-Redirect request to a different url (by default it will set the status as `302`):
+将请求重定向到其他 url（默认情况下，它将状态设置为 `302`）：
 
 [source, js]
 ----
 response.redirect('/url')
 
-// or
+// 或
 response.redirect('/url', false, 301)
 ----
 
-You can send the current request parameters to the redirect location by setting the second parameter to `true`:
+你可以通过将第二个参数设置为 `true` ，将当前请求参数发送到重定向位置：
 
 [source, js]
 ----
@@ -195,7 +195,7 @@ response.redirect('/url', true)
 ----
 
 ==== route(route, [data], [domain], [sendParams = false], [status = 302])
-Redirect to a route (via route name or controller method):
+重定向到路由（通过路由名称或控制器方法）：
 
 .start/routes.js
 [source, js]
@@ -207,35 +207,35 @@ Route
 
 [source, js]
 ----
-// via route name
+// 通过路由名称
 response.route('profile', { id: 1 })
 
-// via controller method
+// 通过控制器方法
 response.route('UserController.show', { id: 1 })
 ----
 
-Since AdonisJs allows registering routes for link:routing#_routing_domains[multiple domains], you can also instruct this method to build the URL for a specific domain:
+由于 AdonisJs 允许为 link:routing#_routing_domains[多个域] 注册路由，因此您还可以指示此方法为特定域构建 URL：
 
 [source, js]
 ----
 response.route('posts', { id: 1 }, 'blog.adonisjs.com')
 ----
 
-== Attachments
-The response object makes it simple to stream files from your server to the client.
+== 附件
+response 对象使你可以轻松地将文件从服务器传输到客户端。
 
 ==== download(filePath)
-Stream the file to the client:
+将文件以流式传输到客户端：
 
 [source, js]
 ----
 response.download(Helpers.tmpPath('uploads/avatar.jpg'))
 ----
 
-This method does not force the client to download the file as an attachment (for example, browsers may choose to display the file in a new window).
+此方法不强制客户端将文件作为附件下载（例如，浏览器可以选择在新窗口中显示该文件）。
 
 ==== attachment(filePath, [name], [disposition])
-Force download the file:
+强制下载文件：
 
 [source, js]
 ----
@@ -244,36 +244,36 @@ response.attachment(
 )
 ----
 
-Download with a custom name:
+使用自定义名称下载：
 
 [source, js]
 ----
 response.attachment(
   Helpers.tmpPath('uploads/avatar.jpg'),
-  'myAvatar.jpg' // custom name
+  'myAvatar.jpg' // 自定义名称
 )
 ----
 
-== Descriptive Methods
-AdonisJs ships with a bunch of descriptive messages, which are more readable than the `send` method. Let's take this example.
+== 描述性方法
+AdonisJs 附带了一堆描述性信息，比 `send` 方法更具可读性，让我们举个例子。
 
 [source, javascript]
 ----
 response.unauthorized('Login First')
 ----
 
-is more readable than
+以上代码比以下代码更具可读性：
 
 [source, javascript]
 ----
 response.status(401).send('Login First')
 ----
 
-Below is the list of all descriptive methods and their corresponding HTTP statuses. Check link:https://httpstatuses.com[httpstatuses.com, window="_blank"] to learn more about HTTP status codes.
+以下是所有描述性方法及其 HTTP 状态的对应列表。查看 link:https://httpstatuses.com[httpstatuses.com, window="_blank"] 以了解有关 HTTP 状态码的更多信息。
 
 [options="header"]
 |====
-| Method | Http Response Status
+| 方法 | HTTP 响应状态
 | continue | 100
 | switchingProtocols | 101
 | ok | 200
@@ -318,10 +318,10 @@ Below is the list of all descriptive methods and their corresponding HTTP status
 | httpVersionNotSupported | 505
 |====
 
-== Extending Response
-It is also possible to extend the `Response` prototype by adding your own methods, known as macros.
+== 扩展响应
+还可以通过添加自己的方法来扩展 `响应` 原型，称为宏。
 
-NOTE: Since the code to extend `Response` needs to execute only once, you could use link:service-providers[providers] or link:ignitor[Ignitor hooks] to do so. Read link:extending-adonisjs[Extending the Core] for more information.
+NOTE: 由于扩展 `响应` 的代码仅需执行一次，因此你可以使用 link:service-providers[服务提供者] 或 link:ignitor[启动装置的钩子] 来执行。请阅读 link:extending-adonisjs[核心扩展] 了解更多信息。
 
 [source, js]
 ----

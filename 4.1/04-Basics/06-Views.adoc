@@ -4,23 +4,23 @@ title: 视图
 category: 基础
 ---
 
-= Views
+= 视图
 
 toc::[]
 
-AdonisJs uses link:http://edge.adonisjs.com/[Edge, window="_blank"] as its templating engine, which is blazingly fast and comes with an elegant API to create dynamic views.
+AdonisJs 使用 link:http://edge.adonisjs.com/[Edge, window="_blank"] 作为其模板引擎，它速度极快，并附带了优雅的 API 用于创建动态视图。
 
-Under the hood, Edge supports:
+在引擎盖下， Edge 支持：
 [ol-shrinked]
-1. Layouts & partials
-2. Components
-3. Runtime debugging using chrome dev tools
-4. Logical tags and everything in between
+1. 布局 & 局部拆分
+2. 组件
+3. 使用 Chrome 开发者工具进行运行时调试
+4. 逻辑标签及其间的所有内容
 
-== Basic example
-Let's start with the classic **Hello World** example by rendering an edge template.
+== 基本例子
+让我们从渲染经典的 **Hello World** 示例开始。
 
-NOTE: Make sure that the AdonisJs `ViewProvider` is registered as a provider inside your `start/app.js` file.
+NOTE: 确保在你的 `start/app.js` 文件中已经将 AdonisJs `ViewProvider` 注册为提供者。
 
 .start/app.js
 [source, js]
@@ -30,9 +30,9 @@ const providers = [
 ]
 ----
 
-All views are stored in the `resources/views` directory and end with the `.edge` extension.
+所有视图都存储在 `resources/views` 目录中，并以 `.edge` 扩展名结尾。
 
-Use the `adonis` command to create the view:
+使用以下 `adonis` 命令创建视图：
 
 [source, bash]
 ----
@@ -45,14 +45,14 @@ Use the `adonis` command to create the view:
 ✔ create  resources/views/hello-world.edge
 ----
 
-Open `hello-world.edge` and save its contents as:
+打开 `hello-world.edge` 并将其内容保存为：
 
 [source, text]
 ----
 <h1>Hello World!</h1>
 ----
 
-Now, create a route to render the `hello-world.edge` view:
+现在，创建一个渲染 `hello-world.edge` 视图的路由：
 
 .start/routes.js
 [source, js]
@@ -62,53 +62,53 @@ Route.get('hello-world', ({ view }) => {
 })
 ----
 
-The `view.render` method takes the relative `resources/views` path to the view file. There is no need to type the `.edge` extension.
+`view.render` 方法采用 `resources/views` 视图文件的相对路径。无需键入 `.edge` 扩展名。
 
-If you haven't already done so, serve your site:
+如果你尚未这么做，请为你的网站开启开发服务：
 
 [source, bash]
 ----
 > adonis serve --dev
 ----
 
-Finally, browse to `127.0.0.1:3333/hello-world` and you should see:
+最后，浏览 `127.0.0.1:3333/hello-world` 你应该能看到：
 
 **"Hello World!"**
 
-=== Nested views
-You can also render views from within subfolders via dot notation:
+=== 嵌套视图
+你还可以通过点符号在子文件夹中渲染视图：
 
 [source, js]
 ----
-// file path: resources/views/my/nested/view.edge
+// 文件路径： resources/views/my/nested/view.edge
 
 view.render('my.nested.view')
 ----
 
-== Request information
-All views have access to the current `request` object.
+== 请求信息
+所有视图都可以访问当前的 `request` 对象。
 
-You can call request methods inside your view templates like so:
+你可以在视图模板中调用请求方法，如下所示：
 
 [source, edge]
 ----
 The request URL is {{ request.url() }}
 ----
 
-The `request.url` value above can also be retrieved via the `url` global:
+上面的 `request.url` 值也可以通过 `url` 全局检索：
 
 [source, edge]
 ----
 The request URL is {{ url }}
 ----
 
-== Globals
-In addition to all Edge link:http://edge.adonisjs.com/docs/globals[globals], the following globals are also provided by AdonisJs.
+== 全局
+除了所有 Edge link:http://edge.adonisjs.com/docs/globals[全局变量]，AdonisJs 还提供了以下全局变量。
 
 ==== style
-Adds a `link` tag to a CSS file.
+将 `link` 标签添加到 CSS 文件。
 
-Relative path (to CSS files in the `public` directory):
+相对路径（到 `public` 目录中的 css 文件）。
 [source, edge]
 ----
 {{ style('style') }}
@@ -119,7 +119,7 @@ Relative path (to CSS files in the `public` directory):
 <link rel="stylesheet" href="/style.css" />
 ----
 
-Absolute path:
+绝对路径：
 [source, edge]
 ----
 {{ style('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css') }}
@@ -131,9 +131,9 @@ Absolute path:
 ----
 
 ==== script
-Adds a `script` tag to a JavaScript file.
+将 `script` 标签添加到 JavaScript 文件。
 
-Relative path (to JavaScript files in the `public` directory):
+相对路径（到 `public` 目录中的 JavaScript 文件）。
 [source, edge]
 ----
 {{ script('app') }}
@@ -144,7 +144,7 @@ Relative path (to JavaScript files in the `public` directory):
 <script type="text/javascript" src="/app.js"></script>
 ----
 
-Absolute path:
+绝对路径：
 [source, edge]
 ----
 {{ script('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js') }}
@@ -156,7 +156,7 @@ Absolute path:
 ----
 
 ==== assetsUrl
-Returns path of a file relative to the `public` directory:
+返回相对于 `public` 目录的文件路径：
 
 [source, edge]
 ----
@@ -169,9 +169,9 @@ Returns path of a file relative to the `public` directory:
 ----
 
 ==== route
-Returns the URL for a route.
+返回路由的 URL。
 
-For example, using the following example route…
+例如，使用以下示例路由...
 
 .start/routes.js
 [source, js]
@@ -180,7 +180,7 @@ Route.get('users/:id', 'UserController.show')
   .as('profile')
 ----
 
-…if you pass the route name and any route parameters…
+…如果你传递路由名称和任何路由参数…
 
 [source, edge]
 ----
@@ -189,7 +189,7 @@ Route.get('users/:id', 'UserController.show')
 </a>
 ----
 
-…the route URL will render like so:
+…路由 URL 将如下呈现：
 
 [source, html]
 ----
@@ -198,7 +198,7 @@ Route.get('users/:id', 'UserController.show')
 </a>
 ----
 
-You can also pass the `controller.method` signature:
+你也可以传递 `controller.method` 签名：
 
 [source, edge]
 ----
@@ -208,7 +208,7 @@ You can also pass the `controller.method` signature:
 ----
 
 ==== url
-Returns the current request url:
+返回当前请求 url：
 
 [source, edge]
 ----
@@ -216,7 +216,7 @@ The request URL is {{ url }}
 ----
 
 ==== auth
-If using the AdonisJs link:authentication[Auth Provider], you can access the current logged in user via the global `auth` object:
+如果使用了 AdonisJs link:authentication[Auth 提供者]，你可以通过全局 `auth` 对象访问当前登录的用户：
 
 [source, edge]
 ----
@@ -224,7 +224,7 @@ If using the AdonisJs link:authentication[Auth Provider], you can access the cur
 ----
 
 ==== CSRF
-If using the AdonisJs link:csrf[Shield Middleware], you can access the CSRF token and input field using one of the following globals.
+如果使用了 AdonisJs link:csrf[Shield 中间件]，你可以使用以下全局变量之一访问CSRF令牌和输入字段。
 
 ===== csrfToken
 [source, edge]
@@ -244,9 +244,9 @@ If using the AdonisJs link:csrf[Shield Middleware], you can access the CSRF toke
 ----
 
 ==== cspMeta
-Using the AdonisJs link:csrf[Shield Middleware], CSP headers are set automatically.
+使用 AdonisJs link:csrf[Shield 中间件]，CSP 头将被自动设置。
 
-However, you can also set them manually via the `cspMeta` global:
+但是，你也可以通过 `cspMeta` 全局手动设置它们：
 
 [source, edge]
 ----
@@ -255,19 +255,19 @@ However, you can also set them manually via the `cspMeta` global:
 </head>
 ----
 
-== Tags
-link:http://edge.adonisjs.com/docs/tags[Tags, window="_blank"] are the building blocks for Edge templates.
+== 标签
+link:http://edge.adonisjs.com/docs/tags[标签, window="_blank"] 是 Edge 模板的构建基块。
 
-For example, `@if`, `@each`, and `@include` are all tags shipped with Edge by default.
+例如, `@if`， `@each`， 和 `@include` 默认情况下都是 Edge 附带的标签。
 
-Edge also exposes a very powerful API to add new tags to it.
+Edge 还公开了一个非常强大的 API 来为其添加新标签。
 
-Here is a list of the `tags` specific to AdonisJs only.
+以下是仅针对于 AdonisJs的 `标签` 列表。
 
 ==== loggedIn
-The `loggedIn` tag allows you to write an `if/else` conditional clause around the logged in user.
+`loggedIn` 标签允许你围绕已登录的用户编写 `if/else` 语句。
 
-For example:
+例如：
 
 [source, edge]
 ----
@@ -278,12 +278,12 @@ For example:
 @endloggedIn
 ----
 
-Everything between the `@loggedIn` and `@else` tag gets rendered if the user is logged in, while everything between the `@else` and `@endloggedIn` tag gets rendered if they are not.
+如果用户已登录，则 `@loggedIn` 和 `@else` 标签之间的内容会被呈现，如果未登录， 则会渲染 `@else` 和 `@endloggedIn` 标签之间的内容。
 
 ==== inlineSvg
-Renders an SVG file inline inside your HTML.
+在 HTML 中内嵌并渲染 SVG 文件。
 
-The tag expects a relative path to an SVG file inside the `public` directory:
+该标签需要指向 `public` 目录中 SVG 文件的相对路径：
 
 [source, edge]
 ----
@@ -293,17 +293,17 @@ The tag expects a relative path to an SVG file inside the `public` directory:
 </a>
 ----
 
-== Templating
-AdonisJs shares its templating syntax with link:https://edge.adonisjs.com[Edge, window="_blank"].
+== 模板
+AdonisJs 与 link:https://edge.adonisjs.com[Edge, window="_blank"] 共享模板语法。
 
-Please read the Edge link:http://edge.adonisjs.com/docs/syntax-guide[Syntax Guide, window="_blank"] for more.
+请阅读 Edge link:http://edge.adonisjs.com/docs/syntax-guide[语法指南, window="_blank"] 了解更多信息。
 
-== Extending views
-It is also possible to extend views by adding your own view globals or tags.
+== 扩展视图
+也可以通过添加自己的视图全局变量或标签来扩展视图。
 
-NOTE: Since the code to extend `View` need only execute once, you could use link:service-providers[providers] or link:ignitor[Ignitor hooks] to do so. Read link:extending-adonisjs[Extending the Core] for more information.
+NOTE: 由于扩展 `视图` 的代码仅需执行一次，因此你可以使用 link:service-providers[服务提供者] 或 link:ignitor[启动装置的钩子] 来执行。请阅读 link:extending-adonisjs[核心扩展] 了解更多信息。
 
-=== Globals
+=== 全局
 [source, js]
 ----
 const View = use('View')
@@ -313,15 +313,15 @@ View.global('currentTime', function () {
 })
 ----
 
-The above global returns the current time when referenced inside your views:
+当在视图中引用时，上述全局返回当前时间：
 
 [source, edge]
 ----
 {{ currentTime() }}
 ----
 
-=== Globals scope
-The value of `this` inside a global's closure is bound to the view context so you can access runtime values from it:
+=== 全局范围
+全局闭包中，`this` 的值已经绑定到视图上下文，因此你可以从中访问运行时的值：
 
 [source, js]
 ----
@@ -330,9 +330,9 @@ View.global('button', function (text) {
 })
 ----
 
-TIP: The `safe` method ensures returned HTML is not escaped.
+TIP: `safe` 确保返回的 HTML 不会被转义。
 
-To use other globals inside your custom globals, use the `this.resolve` method:
+要在自定义全局变量中使用其他全局变量，请使用 `this.resolve` 方法：
 
 [source, js]
 ----
@@ -352,8 +352,8 @@ View.global('getMessage', function (type) {
 {{ getMessage('success') }}
 ----
 
-=== Tags
-You can learn more about tags via the Edge link:http://edge.adonisjs.com/docs/tags[documentation, window="_blank"].
+=== 标签
+你可以通过 Edge link:http://edge.adonisjs.com/docs/tags[文档, window="_blank"] 了解有关标签的更多信息。
 
 [source, js]
 ----
@@ -366,10 +366,10 @@ class MyTag extends View.engine.BaseTag {
 View.engine.tag(new MyTag())
 ----
 
-=== Runtime values
-You may want to share specific request values with your views.
+=== 运行时值
+你可能希望与你的视图共享特定的请求值。
 
-This can be done by creating middleware and sharing locals:
+这可以通过创建中间件和共享本地值来完成：
 
 [source, js]
 ----
@@ -385,15 +385,15 @@ class SomeMiddleware {
 }
 ----
 
-Then, inside your views, you can access it like any other value:
+然后，在你的视图最后你，可以像访问任何其他值一样访问它：
 
 [source, edge]
 ----
 {{ apiVersion }}
 ----
 
-== Syntax highlighting
-The following editor plugins provide Edge syntax highlighting support:
+== 语法高亮
+以下编辑器插件提供 Edge 语法高亮支持：
 
 [ol-shrinked]
 1. link:https://github.com/poppinss/edge-sublime-syntax[Sublime Text, window="_blank"]
