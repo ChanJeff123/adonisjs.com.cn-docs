@@ -8,23 +8,23 @@ category: 基础
 
 toc::[]
 
-AdonisJs has first-class session support with a variety of inbuilt drivers to efficiently manage and store sessions.
+AdonisJs 具备一流的 session 支持，并提供各种内置驱动程序来高效的管理和存储 sessions。
 
-In this guide, we learn how to configure and use these different session drivers.
+在本指南中，我们将学习如何配置和使用这些不同的 session 驱动程序。
 
-== Setup
-If the session provider is not already set up, follow the instructions below.
+== 设置
+如果尚未设置 session 提供者，请按照以下说明进行操作：
 
-First, run the `adonis` command to download the session provider:
+首先，运行 `adonis` 命令下载 session 提供者：
 
 [source, bash]
 ----
 > adonis install @adonisjs/session
 ----
 
-The above command also creates the `config/session.js` file and displays a small set of instructions to help complete your set up.
+以上命令还会创建 `config/session.js` 文件，并显示一小部分说明来帮助你完成设置。
 
-Next, register the session provider inside the `start/app.js` file:
+接下来，在 `start/app.js` 文件中注册 session 提供者：
 
 .start/app.js
 [source, js]
@@ -34,7 +34,7 @@ const providers = [
 ]
 ----
 
-Finally, register the session middleware inside the `start/kernel.js` file:
+最后，在 `start/kernel.js` 文件中注册 session 中间件：
 
 .start/kernel.js
 [source, js]
@@ -44,23 +44,23 @@ const globalMiddleware = [
 ]
 ----
 
-== Supported drivers
-Below is the list of drivers supported by the session provider. You can change the current driver inside the `config/session.js` file.
+== 支持的驱动程序
+以下是 session 提供者支持的驱动程序列表。你可以在 `config/session.js` 文件中更改当前驱动程序。
 
-NOTE: The Redis driver requires the `@adonisjs/redis` package (see the link:redis[Redis] section for installation instructions).
+NOTE: Redis 驱动程序需要 `@adonisjs/redis` 程序包 (相关安装说明，请参阅 link:redis[Redis] 章节)。
 
 [options="header", cols="10, 20, 70"]
 |====
-| Name | Config key | Description
-| Cookie | cookie | Saves session values in encrypted cookies.
-| File | file | Saves session values in a file on a server (should not be used if you are running AdonisJs on multiple servers and behind a load balancer).
-| Redis | redis | Save in link:https://redis.io[Redis, window="_blank"] (ideal for scaling horizontally).
+| 名称 | 配置键 | 描述
+| Cookie | cookie | 将 session 值保存到加密的 cookies 中。
+| File | file | 将 session 值保存在服务器上的文件中（如果在多个服务器上和负载均衡器上运行AdonisJs，则不应使用此选项）。
+| Redis | redis | 保存到 link:https://redis.io[Redis, window="_blank"] 中（适合水平缩放）。
 |====
 
-== Basic example
-The `session` object is passed as part of the link:request-lifecycle#_http_context[HTTP Context], just like the `request` and `response` objects.
+== 基本例子
+`session` 对象作为 link:request-lifecycle#_http_context[HTTP Context] 的一部分传递，如同 `request` 和 `response` 对象。
 
-Here's a quick example of how to use sessions during the HTTP lifecycle:
+以下是如何在 HTTP 生命周期中使用 session 的快速示例：
 
 .start/routes.js
 [source, js]
@@ -75,11 +75,11 @@ Route.get('/username', ({ session }) => {
 })
 ----
 
-== Session methods
-Below is a list of all session methods and their example usages.
+== Session 方法
+以下是所有 session 方法及其示例用法的列表。
 
 ==== put(key, value)
-Add a key/value pair to the session store:
+将键值对添加到 session 存储：
 
 [source, js]
 ----
@@ -87,18 +87,18 @@ session.put('username', 'virk')
 ----
 
 ==== get(key, [defaultValue])
-Return the value for a given key (accepts an optional default value):
+返回给定键的值(接受可选的默认值)：
 
 [source, js]
 ----
 session.get('username')
 
-// default value
+// 默认值
 session.get('username', 'defaultName')
 ----
 
 ==== all
-Get everything back as an object from the session store:
+将 session 存储中的所有内容作为对象返回：
 
 [source, js]
 ----
@@ -106,36 +106,36 @@ session.all()
 ----
 
 ==== increment(key, [steps])
-Increment the value for a given key (ensure the previous value is a number):
+增加给定键的值(确保前一个值是一个数字)：
 
 [source, js]
 ----
 session.increment('counter')
 
-// increment by 5
+// 增加5
 session.increment('counter', 5)
 ----
 
 ==== decrement(key, [steps])
-Decrement the value for a given key (ensure the previous value is a number):
+减小给定键的值(确保前一个值是一个数字)：
 
 [source, js]
 ----
 session.decrement('counter')
 
-// decrement by 2
+// 减去2
 session.decrement('counter', 2)
 ----
 
 ==== forget(key)
-Remove a key/value pair from the session store:
+从 session 存储中删除键值对：
 [source, js]
 ----
 session.forget('username')
 ----
 
 ==== pull(key, [defaultValue])
-Return (and then remove) a key/value pair from the session store:
+从 session 存储中返回(然后删除)键值对：
 
 [source, js]
 ----
@@ -145,21 +145,21 @@ session.get('username') // null
 ----
 
 ==== clear
-Empty the session store:
+清空 session 存储：
 
 [source, js]
 ----
 session.clear()
 ----
 
-== Flash messages
-Flash messages are short-lived session values for a single request only. They are mainly used to *flash form errors*, but can be used for any other purpose.
+== Flash（闪存）消息
+Flash 消息是仅仅针对单个请求的 session 值。它主要用于 *闪存错误信息*，但也可以用于任何其他目的。
 
-=== HTML form example
+=== HTML 表单示例
 
-Let's say we want to validate submitted user data and redirect back to our form if there are validation errors.
+假设我们想要验证提交的用户数据，并在存在验证错误时重定向回我们的表单。
 
-Start with the following HTML form:
+从以下HTML表单开始：
 
 [source, edge]
 ----
@@ -170,7 +170,7 @@ Start with the following HTML form:
 </form>
 ----
 
-Then, register the `/users` route to validate form data:
+然后，注册 `/users` 路由以验证表单数据：
 
 .app/routes.js
 [source, js]
@@ -190,7 +190,7 @@ Route.post('users', ({ request, session, response }) => {
 })
 ----
 
-Finally, rewrite the HTML form to retrieve flash data using link:sessions#_view_helpers[view helpers]:
+最后，重写 HTML 表单以使用 link:sessions#_view_helpers[视图助手] 检索 Flash 数据：
 
 [source, edge]
 ----
@@ -202,11 +202,11 @@ Finally, rewrite the HTML form to retrieve flash data using link:sessions#_view_
 </form>
 ----
 
-=== Flash methods
-Below is a list of all session flash methods and their example usages.
+=== Flash 方法
+以下是所有 session Flash 方法及其示例用法的列表。
 
 ==== flashAll
-Flash the request form data:
+闪存请求表单数据：
 
 [source, js]
 ----
@@ -214,7 +214,7 @@ session.flashAll()
 ----
 
 ==== flashOnly
-Flash only the selected fields:
+仅闪存选定的字段：
 
 [source, js]
 ----
@@ -222,7 +222,7 @@ session.flashOnly(['username', 'email'])
 ----
 
 ==== flashExcept
-Flash the request form data except the selected fields:
+闪存除选定字段之外的请求表单数据：
 
 [source, js]
 ----
@@ -230,7 +230,7 @@ session.flashExcept(['password', 'csrf_token'])
 ----
 
 ==== withErrors
-Flash with an array of errors:
+闪存出现一系列错误：
 
 [source, js]
 ----
@@ -240,18 +240,18 @@ session
 ----
 
 ==== flash
-Flash a custom object:
+闪存一个自定义对象：
 
 [source, js]
 ----
 session.flash({ notification: 'You have been redirected back' })
 ----
 
-=== View helpers
-When using flash messages, you can use the following view helpers to read values from the flash session store.
+=== 视图助手
+使用 Flash 消息时，可以使用以下视图助手从 Flash session 存储中读取值。
 
 ==== old(key, defaultValue)
-Returns the value for a given key from the flash store:
+从 flash 存储返回给定键的值：
 
 [source, js]
 ----
@@ -264,7 +264,7 @@ session.flashOnly(['username'])
 ----
 
 ==== hasErrorFor(key)
-Returns `true` if there is an error for a given field inside the flash store:
+如果 flash 存储中的给定字段存在错误，则返回 `true`：
 
 [source, js]
 ----
@@ -276,12 +276,12 @@ session
 [source, edge]
 ----
 @if(hasErrorFor('username'))
-  // display error
+  // 显示错误
 @endif
 ----
 
 ==== getErrorFor(key)
-Returns the error message for a given field:
+返回给定字段的错误消息：
 
 [source, js]
 ----
@@ -291,7 +291,7 @@ session
 ----
 
 ==== flashMessage(key, defaultValue)
-Returns the flash message for a given key:
+返回给定键的 flash 消息：
 
 [source, js]
 ----
@@ -305,14 +305,14 @@ session.flash({ notification: 'Update successful!' })
 @endif
 ----
 
-== Session persistence
-Session values are persisted in bulk when the request ends. This keeps the request/response performant since you can mutate the session store as many times as you want and a bulk update is only performed at the end.
+== Session 持久化
+当请求结束时，session 值将会批量保存。这样可以保持 请求/响应 的性能，因为你可以根据需要多次更改 session 存储，并且仅在最后执行批量更新。
 
-It is achieved via AdonisJs middleware (see the implementation link:https://github.com/adonisjs/adonis-session/blob/develop/src/Session/Middleware.js#L89[here, window="_blank"]).
+它是通过 AdonisJs 中间件实现的（参见 link:https://github.com/adonisjs/adonis-session/blob/develop/src/Session/Middleware.js#L89[此处, window="_blank"]）。
 
-However, there is a caveat. If an exception is thrown, the middleware layer breaks and session values are never committed.
+但是，一旦抛出异常，则中间件层将中断，并且永远不会提交 session 值。
 
-AdonisJs first-party packages handle this gracefully, but you should commit the session manually if you are handling exceptions of your own:
+AdonisJs 的官方软件（第一方）包可以很好的处理此问题，但如果想要处理自己的异常，则应手动提交 session：
 
 [source, js]
 ----
@@ -321,7 +321,7 @@ const GE = require('@adonisjs/generic-exceptions')
 class MyCustomException extends GE.LogicalException {
   handle (error, { session }) {
     await session.commit()
-    // handle exception
+    // 异常处理
   }
 }
 ----
