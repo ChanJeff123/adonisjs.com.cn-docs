@@ -4,22 +4,22 @@ permalink: database
 category: 数据库
 ---
 
-= Getting Started
+= 起步
 
 toc::[]
 
-Creating AdonisJs data-driven apps is greatly simplified via its powerful link:query-builder[Query Builder], link:lucid[Lucid ORM], link:migrations[Migrations], link:seeds-and-factories[Factories], and link:seeds-and-factories[Seeds].
+通过强大的 link:query-builder[Query Builder]，link:lucid[Lucid ORM]， link:migrations[Migrations]， link:seeds-and-factories[Factories] 和 link:seeds-and-factories[Seeds]，AdonisJs 创建数据驱动的应用程序的过程被大大的简化。
 
-In this guide we'll learn to setup and use the *Database Provider*.
+在本指南中，我们将学习设置和使用 *数据库提供者*。
 
-NOTE: The Data Provider uses link:https://knexjs.org[Knex.js, window="_blank"] internally, so browse the Knex documentation whenever further information is required.
+NOTE: 数据提供者的内部使用了 link:https://knexjs.org[Knex.js, window="_blank"]，所以如果你需要更详细的信息，请阅读 Knex 的文档。
 
-== Supported Databases
-The list of supported databases and their equivalent drivers are as follows:
+== 支持的数据库
+支持的数据库及其对应的驱动程序列表如下：
 
 [options="header", cols="25, 75"]
 |====
-| Database | NPM Driver
+| 数据库 | NPM 驱动程序
 | MariaDB | `npm i mysql` or `npm i mysql2`
 | MSSQL | `npm i mssql`
 | MySQL | `npm i mysql` or `npm i mysql2`
@@ -28,17 +28,17 @@ The list of supported databases and their equivalent drivers are as follows:
 | SQLite3 | `npm i sqlite3`
 |====
 
-== Setup
+== 设置
 
-=== Installation
-If the *Database Provider* (*Lucid*) is not installed, pull it from `npm`:
+=== 安装
+如果未安装 *数据库提供者* (*Lucid*)，请从 npm 的以下位置拉取：
 
 [source, bash]
 ----
 > adonis install @adonisjs/lucid
 ----
 
-Next, register the following providers inside the `start/app.js` file:
+接下来，在 `start/app.js` 文件中注册以下提供者：
 
 .start/app.js
 [source, js]
@@ -52,12 +52,12 @@ const aceProviders = [
 ]
 ----
 
-NOTE: Many AdonisJs boilerplates have *Lucid* installed by default.
+NOTE: 默认情况下，许多 AdonisJs 样板代码都安装了 *Lucid*。
 
-=== Configuration
-The *Database Provider* uses the `sqlite` connection by default.
+=== 配置
+*数据库提供者* 默认使用 `sqlite` 连接。
 
-The default connection can be set via the `config/database.js` file:
+可以通过 `config/database.js` 文件设置默认连接：
 
 .config/database.js
 [source, js]
@@ -67,12 +67,13 @@ module.exports = {
 }
 ----
 
-All of the Knex link:http://knexjs.org/#Installation-client[configuration options, window="_blank"] are supported as is.
+支持所有的 Knex link:http://knexjs.org/#Installation-client[配置选型, window="_blank"]。
 
-== Basic Example
-The AdonisJs link:query-builder[Query Builder] has a *fluent* API, meaning you can chain/append JavaScript methods to create your SQL queries.
+== 基本例子
 
-For example, to select and return all users as JSON:
+AdonisJs link:query-builder[Query Builder] 具有 *流畅的* API，这意味着你可以链接/附加 JavaScript 方法来创建 SQL 查询。
+
+例如，要选择并以JSON形式返回所有用户：
 [source, js]
 ----
 const Database = use('Database')
@@ -82,8 +83,8 @@ Route.get('/', async () => {
 })
 ----
 
-=== Where Clause
-To add a where clause to a query, chain a `where` method:
+=== Where 字句
+要向查询添加where子句，请链接一个 `where` 方法：
 
 [source, js]
 ----
@@ -92,7 +93,7 @@ Database
   .where('age', '>', 18)
 ----
 
-To add another where clause, chain an `orWhere` method:
+要添加另一个 where 字句，请链接 `orWhere` 方法：
 
 [source, js]
 ----
@@ -102,12 +103,12 @@ Database
   .orWhere('vip', true)
 ----
 
-See the link:query-builder[Query Builder] documentation for the complete API reference.
+有关完整的 API 参考，请参阅 link:query-builder[Query Builder] 文档。
 
-== Multiple Connections
-By default, AdonisJs uses the `connection` value defined inside the `config/database.js` file when making database queries.
+== 多个连接
+默认情况下，AdonisJs 在进行数据库查询时会使用 `config/database.js` 文件中定义的 `连接` 值。
 
-You can select any of the connections defined inside the `config/database.js` file at runtime to make your queries:
+你可以在运行时选择 `config/database.js` 文件中定义的任一连接进行查询：
 
 [source, js]
 ----
@@ -116,9 +117,9 @@ Database
   .table('users')
 ----
 
-NOTE: Since AdonisJs pools connections for reuse, all used connections are maintained unless the process dies.
+NOTE: 由于AdonisJs将连接池用于重用，因此除非进程终止，否则将维护所有已使用的连接。
 
-To close a connection, call the `close` method passing any connection names:
+要关闭连接，请调用 `close` 方法并传递任何连接名称：
 
 [source, js]
 ----
@@ -126,12 +127,12 @@ const users = await Database
   .connection('mysql')
   .table('users')
 
-// later close the connection
+// 稍后关闭连接
 Database.close(['mysql'])
 ----
 
-== Table Prefixing
-The *Database Provider* can automatically prefix table names by defining a `prefix` value inside the `config/database.js` file:
+== 表前缀
+*数据库提供者* 可以通过在 `config/database.js` 文件中定义 `前缀` 值来自动为表名添加前缀：
 
 .config/database.js
 [source, js]
@@ -146,7 +147,7 @@ module.exports = {
 }
 ----
 
-Now, all queries on the `sqlite` connection will have `my_` as their table prefix:
+现在，所有在 `sqlite` 连接上的查询都将以 `my_` 作为表前缀：
 
 [source, js]
 ----
@@ -162,7 +163,7 @@ select * from `my_users`
 ----
 
 ==== withOutPrefix
-If a `prefix` value is defined you can ignore it by calling `withOutPrefix`:
+如果定义了 `前缀` 值，你可以通过调用 `withOutPrefix` 忽略它：
 
 [source, js]
 ----
@@ -171,13 +172,13 @@ await Database
   .table('users')
 ----
 
-== Debugging
-Debugging database queries can be handy in both development and production.
+== 调试
+在开发和生成中调试数据库查询都非常方便。
 
-Let's go through the available strategies to debug queries.
+让我们来看看调试查询的可用策略。
 
-=== Globally
-Setting `debug: true` inside the `database/config.js` file enables debugging for all queries globally:
+=== 全局
+在 `database/config.js` 文件中设置 `debug: true` 可以全局调试所有查询：
 
 .config/database.js
 [source, js]
@@ -193,9 +194,9 @@ module.exports = {
 }
 ----
 
-You can also debug queries via the *Database Provider* `query` event.
+你还可以通过 *数据库提供者* `query` 事件调试查询。
 
-Listen for the `query` event by defining a hook inside the `start/hooks.js` file:
+通过在 `start/hooks.js` 文件中定义一个钩子来监听 `query` 事件：
 
 .start/hooks.js
 [source, js]
@@ -208,10 +209,10 @@ hooks.after.providersBooted(() => {
 })
 ----
 
-NOTE: Create the `start/hooks.js` file if it does not exist.
+NOTE: 如果 `start/hooks.js` 文件不存在，请创建它。
 
-=== Locally
-You can listen for the `query` event per query at runtime:
+=== 本地
+你可以在运行时监听每个查询的 `query` 事件：
 
 [source, js]
 ----
