@@ -14,18 +14,18 @@ toc::[]
 
 == 创建迁移
 
-NOTE: To use migrations, the link:database#_setup[Migrations Provider] must first be registered inside the `start/app.js` file's `aceProviders` array.
+NOTE: 要使用迁移，必须首先在 `start/app.js` 文件的 `aceProviders` 数组中注册 link:database#_setup[Migrations Provider 迁移提供者]。
 
-Let's create a *users* table with the help of migrations.
+让我们在迁移的帮助下创建一个 *用户* 表。
 
-First, call the `adonis make:migration` command to create a schema file:
+首先，调用 `adonis make:migration` 命令创建一个 schema 文件：
 
 [source, bash]
 ----
 > adonis make:migration users
 ----
 
-When prompted, choose the `Create table` option and press kbd:[Enter]:
+出现提示时，选择 `Create table` 选型然后按 kbd:[Enter] 回车键：
 
 .Output
 [source, bash]
@@ -33,7 +33,7 @@ When prompted, choose the `Create table` option and press kbd:[Enter]:
 ✔ create  database/migrations/1502691651527_users_schema.js
 ----
 
-Your new schema file (prefixed with the current timestamp) is created in the `database/migrations` directory, ready to modify as required:
+你的 schema 文件将会在 `database/migrations` 目录中创建（以当前时间戳为前缀），可以根据需要进行修改：
 
 .database/migrations/...users_schema.js
 [source, js]
@@ -60,17 +60,17 @@ module.exports = UsersSchema
 
 == Schema 文件
 
-A schema file requires two methods: `up` and `down`.
+一个 schema 文件需要包含两个方法： `up` 和 `down`。
 
 === up()
 
-The `up` method is used to take action on a table. It can be used to create a new table or altering an existing table.
+`up` 方法用于对表执行操作，它用于创建新表或更改现有表。
 
 === down()
 
-The `down` method is used to revert the changes applied in the `up` method. When `up` is used to create a table, `down` would be used to drop that table.
+`down` 方法用于还原 `up` 方法中应用的更改。当使用 `up` 创建表时，便可用 `down` 来删除该表。
 
-Update the schema file link:#_creating_migrations[you just created] with the following code:
+使用以下代码更新 link:#_creating_migrations[你刚刚创建的] schema 文件：
 
 .database/migrations/...users_schema.js
 [source, js]
@@ -98,39 +98,39 @@ class UsersSchema extends Schema {
 module.exports = UsersSchema
 ----
 
-The example above demonstrates how to create/alter a database table using schema files, chaining together different column link:#_column_typesmodifiers[type/modifier methods] to define the characteristics of individual field attributes in the `up` method.
+上面的示例中演示了如何使用 schema 文件创建/更改数据库表，将不同的 link:#_column_typesmodifiers[列类型/修饰符方法] 链接在一起，以定义 `up` 方法中各个字段属性的特征。
 
 == 列类型/修饰符
 
-NOTE: For the full list of schema column type and modifier methods, see the link:https://knexjs.org/#Schema-Building[Knex API, window="_blank"] documentation.
+NOTE: 有关 schema 的列类型和修饰符方法的完整列表，请参阅 link:https://knexjs.org/#Schema-Building[Knex API, window="_blank"] 文档。
 
 === 列类型
-[options="header", cols="55, 45"]
+[options="header", cols="50, 50"]
 |====
-| Method | Description
-| `table.bigInteger(name)` | Adds a link:https://knexjs.org/#Schema-bigInteger[bigint, window="blank"] column.
-| `table.binary(name, [length])` | Adds a link:https://knexjs.org/#Schema-binary[binary, window="blank"] column.
-| `table.boolean(name)` | Adds a link:https://knexjs.org/#Schema-boolean[boolean, window="blank"] column.
-| `table.date(name)` | Adds a link:https://knexjs.org/#Schema-date[date, window="blank"] column.
-| `table.datetime(name, [precision])` | Adds a link:https://knexjs.org/#Schema-datetime[datetime, window="blank"] column.
-| `table.decimal(name, [precision], [scale])` | Adds a link:https://knexjs.org/#Schema-decimal[decimal, window="blank"] column.
-| `table.enu(col, values, [options])` | Adds a link:https://knexjs.org/#Schema-enum[enum, window="blank"] column.
-| `table.float(name, [precision], [scale])` | Adds a link:https://knexjs.org/#Schema-float[float, window="blank"] column.
-| `table.increments(name)` | Adds an link:https://knexjs.org/#Schema-increments[auto incrementing, window="_blank"] column.
-| `table.integer(name)` | Adds an link:https://knexjs.org/#Schema-integer[integer, window="blank"] column.
-| `table.json(name)` | Adds a link:https://knexjs.org/#Schema-json[json, window="blank"] column.
-| `table.string(name, [length=255])` | Adds a link:https://knexjs.org/#Schema-string[string, window="blank"] column.
-| `table.text(name, [textType])` | Adds a link:https://knexjs.org/#Schema-text[text, window="blank"] column.
-| `table.time(name, [precision])` | Adds a link:https://knexjs.org/#Schema-time[time, window="blank"] column.
-| `table.timestamp(name, [useTz], [precision])` | Adds a link:https://knexjs.org/#Schema-timestamp[timestamp, window="blank"] column.
-| `table.timestamps([useTimestamps], [defaultToNow])` | Adds link:https://knexjs.org/#Schema-timestamps[created/updated, window="blank"] columns.
-| `table.uuid(name)` | Adds a link:https://knexjs.org/#Schema-uuid[uuid, window="blank"] column.
+| 方法 | 描述
+| `table.bigInteger(name)` | 添加一个 link:https://knexjs.org/#Schema-bigInteger[bigint, window="blank"]（大整数） 列。
+| `table.binary(name, [length])` | 添加一个 link:https://knexjs.org/#Schema-binary[binary, window="blank"]（二进制）列。
+| `table.boolean(name)` | 添加一个 link:https://knexjs.org/#Schema-boolean[boolean, window="blank"]（布尔）列。
+| `table.date(name)` | 添加一个 link:https://knexjs.org/#Schema-date[date, window="blank"]（日期）列。
+| `table.datetime(name, [precision])` | 添加一个 link:https://knexjs.org/#Schema-datetime[datetime, window="blank"]（日期时间）列。
+| `table.decimal(name, [precision], [scale])` | 添加一个 link:https://knexjs.org/#Schema-decimal[decimal, window="blank"]（十进制）列。
+| `table.enu(col, values, [options])` | 添加一个 link:https://knexjs.org/#Schema-enum[enum, window="blank"]（枚举）列。
+| `table.float(name, [precision], [scale])` | 添加一个 link:https://knexjs.org/#Schema-float[float, window="blank"]（浮点）列。
+| `table.increments(name)` | 添加一个 link:https://knexjs.org/#Schema-increments[auto incrementing, window="_blank"]（自动递增）列。
+| `table.integer(name)` | 添加一个 link:https://knexjs.org/#Schema-integer[integer, window="blank"]（整数）列。
+| `table.json(name)` | 添加一个 link:https://knexjs.org/#Schema-json[json, window="blank"] 列。
+| `table.string(name, [length=255])` | 添加一个 link:https://knexjs.org/#Schema-string[string, window="blank"]（字符串）列。
+| `table.text(name, [textType])` | 添加一个 link:https://knexjs.org/#Schema-text[text, window="blank"]（文本）列。
+| `table.time(name, [precision])` | 添加一个 link:https://knexjs.org/#Schema-time[time, window="blank"] （时间）列。
+| `table.timestamp(name, [useTz], [precision])` | 添加一个 link:https://knexjs.org/#Schema-timestamp[timestamp, window="blank"]（时间戳）列。
+| `table.timestamps([useTimestamps], [defaultToNow])` | 添加 link:https://knexjs.org/#Schema-timestamps[创建/更新, window="blank"] 列.
+| `table.uuid(name)` | 添加一个 link:https://knexjs.org/#Schema-uuid[uuid, window="blank"]（通用唯一标示符）列。
 |====
 
 === 列修饰符
 [options="header", cols="40, 60"]
 |====
-| Method | Description
+| 方法 | Description
 | `.after(field)` | Set column to be inserted link:https://knexjs.org/#Schema-after[after, window="blank"] `field`.
 | `.alter()` | Marks the column as an link:https://knexjs.org/#Schema-alter[alter/modify, window="blank"].
 | `.collate(collation)` | Set column link:https://knexjs.org/#Chainable[collation, window="blank"] (e.g. `utf8_unicode_ci`).
