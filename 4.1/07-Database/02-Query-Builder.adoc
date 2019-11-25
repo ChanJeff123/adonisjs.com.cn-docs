@@ -75,7 +75,7 @@ await Database.select('id', 'username').from('users')
 await Database.select('*').from('users')
 ----
 
-.SQL 输出
+.SQL Output
 [source, sql]
 ----
 select `id`, `username` from `users`
@@ -127,7 +127,7 @@ await Database.from('users').where(function () {
 })
 ----
 
-.SQL 输出
+.SQL Output
 [source, sql]
 ----
 select * from `users` where (`id` = 1 or `id` > 10)

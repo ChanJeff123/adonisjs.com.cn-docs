@@ -1,18 +1,18 @@
 ---
 permalink: migrations
-title: 数据库迁移
+title: 迁移
 category: 数据库
 ---
 
-= Migrations
+= 迁移
 
 toc::[]
 
-Migrations are documented database mutations, created throughout your application's development lifecycle that you can roll back or re-run at any point in time.
+迁移是记录数据库变化的过程（利用代码操作数据库，而不是原生 SQL），在整个应用程序的开发生命周期中创建，你可以随时回滚或重新运行。
 
-Migrations make it easier to work as a team, enabling database schema changes from one developer to be easily tracked and then applied by other developers in your organization.
+迁移使团队工作变得更加容易，可以轻松的跟踪一个开发人员对数据库架构的更改，然后被组织中的其他开发人员应用。
 
-== Creating Migrations
+== 创建迁移
 
 NOTE: To use migrations, the link:database#_setup[Migrations Provider] must first be registered inside the `start/app.js` file's `aceProviders` array.
 
@@ -58,7 +58,7 @@ class UsersSchema extends Schema {
 module.exports = UsersSchema
 ----
 
-== Schema Files
+== Schema 文件
 
 A schema file requires two methods: `up` and `down`.
 
@@ -100,11 +100,11 @@ module.exports = UsersSchema
 
 The example above demonstrates how to create/alter a database table using schema files, chaining together different column link:#_column_typesmodifiers[type/modifier methods] to define the characteristics of individual field attributes in the `up` method.
 
-== Column Types/Modifiers
+== 列类型/修饰符
 
 NOTE: For the full list of schema column type and modifier methods, see the link:https://knexjs.org/#Schema-Building[Knex API, window="_blank"] documentation.
 
-=== Column Types
+=== 列类型
 [options="header", cols="55, 45"]
 |====
 | Method | Description
@@ -127,7 +127,7 @@ NOTE: For the full list of schema column type and modifier methods, see the link
 | `table.uuid(name)` | Adds a link:https://knexjs.org/#Schema-uuid[uuid, window="blank"] column.
 |====
 
-=== Column Modifiers
+=== 列修饰符
 [options="header", cols="40, 60"]
 |====
 | Method | Description
@@ -147,7 +147,7 @@ NOTE: For the full list of schema column type and modifier methods, see the link
 | `.unsigned()` | Set column to link:https://knexjs.org/#Schema-unsigned[unsigned, window="blank"] (if integer).
 |====
 
-== Multiple Connections
+== 多个连接
 Schema files can use a different connection by defining a `connection` getter (ensure your different connection exists inside the `config/database.js` file):
 
 .database/migrations/...users_schema.js
@@ -168,7 +168,7 @@ module.exports = UsersSchema
 
 NOTE: The database table `adonis_schema` is always created inside the default connection database to manage the lifecycle of migrations (there is no option to override it).
 
-== Run Migrations
+== 运行迁移
 We need to call the `migration:run` command to run migrations (which executes the `up` method on all pending migration files):
 
 [source, bash]
@@ -183,7 +183,7 @@ migrate: 1502691651527_users_schema.js
 Database migrated successfully in 117 ms
 ----
 
-== Migration Status
+== 迁移状态
 You can check the status of all migrations by running the following command:
 
 [source, bash]
@@ -203,10 +203,10 @@ That is how migrations work under the hood:
 
 TIP: Don't create multiple tables in a single schema file. Instead, create a new file for each database change. This way you keep your database atomic and can roll back to any version.
 
-== Migration Commands
+== 迁移命令
 Below is the list of available migration commands.
 
-=== Command List
+=== 命令列表
 [options="header"]
 |====
 | Command  | Description
@@ -219,7 +219,7 @@ Below is the list of available migration commands.
 |====
 
 
-=== Command Help
+=== 命令帮助
 For detailed command options, append `--help` to a each migration command:
 
 
@@ -244,7 +244,7 @@ About:
   Run all pending migrations
 ----
 
-== Schema Table API
+== Schema 表 API
 Below is the list of schema methods available to interact with database tables.
 
 ==== create
@@ -342,7 +342,7 @@ async up () {
 }
 ----
 
-== Extensions
+== 扩展
 Below is the list of extension methods you can execute when running migrations.
 
 NOTE: Extensions only work with a PostgreSQL database.
@@ -395,7 +395,7 @@ class UserSchema {
 }
 ----
 
-== Executing Arbitrary Code
+== 执行任意代码
 Commands written inside the `up` and `down` methods are scheduled to be executed later inside a migration.
 
 If you need to execute *arbitrary* database commands, wrap them inside the `schedule` function:
@@ -423,7 +423,7 @@ class UserSchema {
 
 NOTE: The `schedule` method receives a *transaction object*. It is important to run all database commands inside the same transaction, otherwise your queries will hang forever.
 
-== Schema Builder API
+== Schema 构造器 API
 The schema builder API uses the link:http://knexjs.org/#Schema-Building[Knex API, window="_blank"], so make sure to read their documentation for more information.
 
 ==== fn.now()
