@@ -4,29 +4,29 @@ title: 查询构造器
 category: 数据库
 ---
 
-= Query Builder
+= 查询构造器
 
 toc::[]
 
-The AdonisJs *Query Builder* provides a unified syntax to interact with SQL databases using JavaScript methods.
+AdonisJs *查询构造器* 提供了统一的语法，让 JavaScript 方法可以与 SQL 数据库进行交互。
 
-This guide is a reference to all the available methods on the *Query Builder*.
+本指南是对 *查询构造器* 上所有可用方法的参考。
 
-TIP: See the database link:database[Getting Started] guide for the list of supported databases, config options and how to debug your SQL queries.
+TIP: 有关支持的数据库，配置选项以及如何调试 SQL 查询的信息，请参加 数据库 link:database[起步]。
 
-== Introduction
-Writing SQL queries can be tedious, even if you are proficient with SQL.
+== 介绍
+即使你精通 SQL，编写 SQL 查询也可能很乏味。
 
-=== Syntax Abstraction
+=== 语法抽象
 
-Imagine all your queries are written for MySQL, and at a later time you're asked to migrate everything to PostgreSQL. You'd have to rewrite/amend your MySQL queries to ensure they still work well with PostgreSQL.
+想像一下，你的所有查询都是针对 MySQL 编写的，稍后你会被要求将所有内容迁移到 PostgreSQL 上。你必须重写/修改你的 MySQL 查询，以确保它们仍然适用于 PostgreSQL。
 
-*Query Builder* abstracts away connection specific syntax so you're free to concentrate on your app functionality instead of variations in SQL dialects.
+*查询构造器* 抽象了特定于连接的语法，因此你可以自由的专注于应用程序功能，而不是 SQL 语言的变体（类似语法糖）。
 
-=== Conditional Queries
-Another issue can be building incremental queries with conditional blocks:
+=== 条件查询
+另一个问题是使用条件块构建增量查询：
 
-.Without Query Builder
+.不使用查询构造器
 [source, javascript]
 ----
 const sql = 'SELECT * FROM `users`'
@@ -36,7 +36,7 @@ if (username) {
 }
 ----
 
-.With Query Builder
+.使用查询构造器
 [source, javascript]
 ----
 const query = Database.table('users')
@@ -46,8 +46,8 @@ if (username) {
 }
 ----
 
-== Basic Example
-Here's a basic example using the *Query Builder* to chain different methods:
+== 基本例子
+这是一个使用 *查询构造器* 链接不同方法的基本示例：
 
 [source, javascript]
 ----
@@ -65,48 +65,48 @@ class UserController {
 }
 ----
 
-== Selects
-The `select` method defines the fields to be selected for a given query:
+== 选择
+`select` 方法定义要为给定查询选择的字段：
 
 [source, javascript]
 ----
 await Database.select('id', 'username').from('users')
-// or
+// 或者
 await Database.select('*').from('users')
 ----
 
-.SQL Output
+.SQL 输出
 [source, sql]
 ----
 select `id`, `username` from `users`
 select * from `users`
 ----
 
-You can define query *aliases* like so:
+你可以像这样定义查询 *别名*：
 [source, js]
 ----
 await Database.select('username as uname')
 ----
 
-== Where Clauses
-*Query Builder* offers numerous dynamic methods to add *where* clauses.
+== Where 子句
+*查询构造器* 提供了许多动态方法来添加 *where* 子句。
 
-It also supports subqueries by passing a *closure* or *another query* instead of the actual value.
+它还可以通过传递 *闭包* 或 *其他查询*（而不是实际值） 来支持子查询。
 
-For detailed `where` information, see Knex's link:http://knexjs.org/#Builder-wheres[documentation, window="_blank"].
+有关 `where` 的详细信息，请参阅 Knex 的 link:http://knexjs.org/#Builder-wheres[文档, window="_blank"]。
 
-NOTE: Passing `undefined` to the `where` clause causes an error during SQL compilation, so ensure dynamic values are not `undefined` before passing them.
+NOTE: 在 SQL 编译期间，传递 `undefined` 给 `where` 子句将会导致错误，因此请确保在传递动态值之前不要将其定义为 `undefined`。
 
 ==== where
 
 [source, javascript]
 ----
 const users = await Database.from('users').where('id', 1)
-// Or
+// 或者
 const users = await Database.from('users').where({ id: 1 })
 ----
 
-You can pass a comparison operator to the `where` clause like so:
+你可以将比较运算符传递给 `where` 子句，如下所示：
 
 [source, javascript]
 ----
@@ -115,8 +115,8 @@ const adults = await Database
   .where('age', '>', 18)
 ----
 
-==== where (with callback)
-You can pass a callback to the `where` clause to group all clauses contained withing the callback:
+==== where (带回调)
+你可以将回调传递给 `where` 子句，以便对回调中包含的所有子句进行分组：
 
 [source, javascript]
 ----
@@ -127,7 +127,7 @@ await Database.from('users').where(function () {
 })
 ----
 
-.SQL Output
+.SQL 输出
 [source, sql]
 ----
 select * from `users` where (`id` = 1 or `id` > 10)
@@ -140,7 +140,7 @@ await Database
   .from('users')
   .whereNot('age', '>', 15)
 
-// or
+// 或者
 await Database
   .from('users')
   .whereNot({username: 'foo'})
@@ -211,7 +211,7 @@ await Database
 ----
 
 ==== whereRaw
-Convenience helper for `.where(Database.raw(query))`:
+`.where(Database.raw(query))` 的便利助手：
 
 [source, javascript]
 ----
@@ -220,7 +220,7 @@ await Database
   .whereRaw('id = ?', [20])
 ----
 
-== Joins
+== 连接
 
 ==== innerJoin
 
@@ -231,7 +231,7 @@ await Database
   .innerJoin('accounts', 'user.id', 'accounts.user_id')
 ----
 
-You can also pass a callback to construct the join:
+你还可以传递回调以构建连接：
 
 [source, javascript]
 ----
@@ -316,7 +316,7 @@ await Database
   .joinRaw('natural full join table1').where('id', 1)
 ----
 
-== Ordering and Limits
+== 排序和限制
 
 ==== distinct
 [source, javascript]
@@ -359,7 +359,7 @@ await Database
 ----
 
 ==== having(column, operator, value)
-NOTE: `groupBy()` must be called before `having()`.
+NOTE: 必须在 `groupBy()` 之前调用 `having()`。
 
 [source, javascript]
 ----
@@ -378,10 +378,10 @@ await Database
   .limit(10)
 ----
 
-== Inserts
+== 插入
 
 ==== insert(values)
-The `insert` operation creates a row and returns its newly created `id`:
+`insert` 操作创建一行并返回其新创建的 `id`：
 [source, javascript]
 ----
 const userId = await Database
@@ -389,18 +389,18 @@ const userId = await Database
   .insert({username: 'foo', ...})
 ----
 
-In the case of bulk inserts, the `id` of the first record is returned (this is a limitation with MySQL itself; see link:http://dev.mysql.com/doc/refman/5.6/en/information-functions.html#function_last-insert-id[LAST_INSERT_ID, window="_blank"]):
+如果是批量插入，则返回第一条记录的 `id`（这是 MySQL 本身的限制，请参阅 link:http://dev.mysql.com/doc/refman/5.6/en/information-functions.html#function_last-insert-id[LAST_INSERT_ID, window="_blank"]）：
 
 [source, javascript]
 ----
-// BULK INSERT
+// 批量插入
 const firstUserId = await Database
   .from('users')
   .insert([{username: 'foo'}, {username: 'bar'}])
 ----
 
 ==== into(tableName)
-The `into` method is a more readable alternative than using `table/from` when inserting database rows:
+插入数据库行时，`into` 方法比 `table/from` 更具可读性：
 
 [source, javascript]
 ----
@@ -409,8 +409,8 @@ const userId = await Database
   .into('users')
 ----
 
-=== PostgreSQL Return Column
-For PostgreSQL, you have to define the returning column explicitly (all other database clients ignore this statement):
+=== PostgreSQL 返回列
+对于 PostgreSQL，你必须显示定义返回列（所有其他数据库客户端都忽略此语句）：
 
 [source, javascript]
 ----
@@ -420,8 +420,8 @@ const userId = await Database
   .returning('id')
 ----
 
-== Updates
-All update operations return the number of affected rows:
+== 更新
+所有更新操作都返回受影响的行数：
 
 [source, javascript]
 ----
@@ -431,7 +431,7 @@ const affectedRows = await Database
   .update('lastname', 'Virk')
 ----
 
-To update multiple columns, pass those columns/values as an object:
+要更新多个列，请将这些列/值作为对象传递：
 
 [source, javascript]
 ----
@@ -441,10 +441,10 @@ const affectedRows = await Database
   .update({ lastname: 'Virk', firstname: 'Aman' })
 ----
 
-== Deletes
+== 删除
 
 ==== delete
-Delete operations also return the number of affected rows:
+删除操作还会返回受影响的行数：
 
 [source, javascript]
 ----
@@ -454,18 +454,18 @@ const affectedRows = await Database
   .delete()
 ----
 
-NOTE: As `delete` is reserved a reserved keyword in JavaScript, you can also use the alternative `del()` method.
+NOTE: 由于 `delete` 是 JavaScript 的一个保留关键字，所以你也可以使用代替的 `del()` 方法。
 
 ==== truncate
-Truncate removes all table rows, resetting the table auto increment id to `0`:
+Truncate 删除所有表行，将表的自动增量 id 重置为 `0`：
 
 [source, javascript]
 ----
 await Database.truncate('users')
 ----
 
-== Pagination
-*Query Builder* provides convenient methods to paginate database results.
+== 分页
+*查询构造器* 提供了分页数据库结果的便捷方法。
 
 ==== forPage(page, [limit=20])
 [source, javascript]
@@ -483,7 +483,7 @@ const results = await Database
   .paginate(2, 10)
 ----
 
-NOTE: The output of the `paginate` method is different from the `forPage` method.
+NOTE: `paginate` 方法的输出和 `forPage` 方法不同。
 
 .Output
 [source, javascript]
@@ -497,25 +497,25 @@ NOTE: The output of the `paginate` method is different from the `forPage` method
 }
 ----
 
-NOTE: If using *PostgreSQL*, the `total` key will be a string since JavaScript is unable to handle `bigint` natively (see link:https://github.com/adonisjs/adonis-lucid/issues/339#issuecomment-387399508[this issue, window="_blank"] for a recommended solution).
+NOTE: 如果使用了 *PostgreSQL*，则 `total` 键将是一个字符串，因为 JavaScript 无法在本地处理 `bigint`（有关推荐的解决方案，请参阅 link:https://github.com/adonisjs/adonis-lucid/issues/339#issuecomment-387399508[此问题, window="_blank"]）。
 
-== Database Transactions
-Database transactions are safe operations which are not reflected in the database until you explicitly commit your changes.
+== 数据库事务
+数据库事务是安全的操作，在你明确提交更改之前，这些操作不会反映在数据库中。
 
 ==== beginTransaction
-The `beginTransaction` method returns the transaction object, which can be used to perform any queries:
+`beginTransaction` 方法返回事务对象，用于执行任何查询：
 
 [source, javascript]
 ----
 const trx = await Database.beginTransaction()
 await trx.insert({username: 'virk'}).into('users')
 
-await trx.commit() // insert query will take place on commit
-await trx.rollback() // will not insert anything
+await trx.commit() // 提交时将进行插入查询
+await trx.rollback() // 不会插入任何东西
 ----
 
 ==== transaction
-You can also wrap your transactions inside a callback:
+你还可以将事务包装在回调中：
 
 [source, javascript]
 ----
@@ -524,13 +524,13 @@ await Database.transaction(async (trx) => {
 })
 ----
 
-NOTE: You do not have to call `commit` or `rollback` manually inside this callback.
+NOTE: 你无需在此回调中手动调用 `commit` 或者 `rollback`。
 
-If any of your queries throws an error, the transaction rolls back automatically, otherwise, it is committed.
+如果你的任何查询引发了错误，则事务将会自动回滚，否则将被提交。
 
-== Aggregates
+== 聚合
 
-*Query Builder* exposes the full power of Knex's link:http://knexjs.org/#Builder-count[aggregate methods, window="_blank"].
+*查询构造器* 暴露了 Knex link:http://knexjs.org/#Builder-count[聚合方法, window="_blank"] 的全部功能。
 
 ==== count()
 [source, javascript]
@@ -541,14 +541,14 @@ const count = await Database
 
 const total = count[0]['count(*)']              // returns number
 
-// COUNT A COLUMN
+// 列数
 const count = await Database
   .from('users')
   .count('id')                                  // returns array
 
 const total = count[0]['count("id")']           // returns number
 
-// COUNT COLUMN AS NAME
+// 以名称计算列数
 const count = await Database
   .from('users')
   .count('* as total')                          // returns array
@@ -557,7 +557,7 @@ const total = count[0].total                    // returns number
 ----
 
 ==== countDistinct
-`countDistinct` is the same as `count`, but adds a `distinct` expression:
+`countDistinct` 与 `count` 相同，但是添加了一个 `distinct` 表达式：
 
 [source, javascript]
 ----
@@ -611,7 +611,7 @@ await Database.from('users').avgDistinct('age as age')  // returns array
 ----
 
 ==== increment
-Increase the column value by `1`:
+将列值增加 `1`：
 
 [source, javascript]
 ----
@@ -622,7 +622,7 @@ await Database
 ----
 
 ==== decrement
-Decrease the column value by `1`:
+将列值减少 `1`：
 
 [source, javascript]
 ----
@@ -632,15 +632,15 @@ await Database
   .decrement('balance', 10)
 ----
 
-=== Aggregate Helpers
+=== 聚合助手
 
-The AdonisJs *Query Builder* also extends Knex's query aggregates with helpful shortcut methods for common aggregate queries. These helper methods end the query builder chain and return a value.
+AdonisJs *查询构造器* 还扩展了 Knex 的查询聚合，为常见的聚合查询提供了有用的快捷方法。这些辅助方法会结束查询构造器链并返回一个值。
 
-All helpers accept a column name to be used for aggregation. When possible, *Query Builder* will choose a default for the column name.
+所有助手程序都接受用于聚合的列名。如果可能，*查询构造器* 将为列名选择默认值。
 
-Some methods, such as `sum()`, require a column name.
+有些方法，例如 `sum()`，需要列名。
 
-The underlying Knex query builder defines the methods: `count()`, `countDistinct()`, `avg()`, `avgDistinct()`, `sum()`, `sumDistinct()`, `min()`, and `max()`. To avoid confusion and naming collisions, *Query Builder* prefixes its aggregate helper methods with `get` (e.g. `getCount`).
+底层的 Knex 查询构造器定义了以下方法：`count()`, `countDistinct()`, `avg()`, `avgDistinct()`, `sum()`, `sumDistinct()`, `min()` 和 `max()`。为了避免混淆和命名冲突，*查询构造器* 在其聚合辅助方法上加了 `get` 前缀（例如 `getCount`），
 
 ==== getCount(columnName = '*')
 [source, javascript]
@@ -695,17 +695,17 @@ await Database.from('users').getAvgDistinct('age')      // returns number
 ----
 
 
-== Helpers
+== 助手
 
 ==== pluck(column)
-The `pluck` method will return an array of values for the selected column:
+`pluck` 方法将返回选定列的值数组：
 [source, javascript]
 ----
 const usersIds = await Database.from('users').pluck('id')
 ----
 
 ==== first
-The `first` method adds a `limit 1` clause to the query:
+`first` 方法向查询添加一条 `limit 1` 子句：
 
 [source, javascript]
 ----
@@ -713,7 +713,7 @@ await Database.from('users').first()
 ----
 
 ==== clone
-Clones the current query chain for later usage:
+克隆当前查询链以供以后使用：
 
 [source, javascript]
 ----
@@ -722,12 +722,12 @@ const query = Database
   .where('username', 'virk')
   .clone()
 
-// later
+// 之后
 await query
 ----
 
 ==== columnInfo
-Returns information for a given column:
+返回给定列的信息：
 
 [source, javascript]
 ----
@@ -736,7 +736,7 @@ const username = await Database
   .columnInfo('username')
 ----
 
-== Subqueries
+== 子查询
 [source, javascript]
 ----
 const subquery = Database
@@ -754,8 +754,8 @@ const users = await Database
 select * from `users` where `id` in (select `account_name` from `accounts` where `account_name` = 'somename')
 ----
 
-== Raw Queries
-The `Database.raw` method should be used for running raw SQL queries:
+== 原生查询
+`Database.raw` 方法应该用于运行原生 SQL 查询：
 
 [source, js]
 ----
@@ -763,10 +763,10 @@ await Database
   .raw('select * from users where username = ?', [username])
 ----
 
-== Closing Connections
-Database connections can be closed by calling the `close` method. By default, this method closes all open database connections.
+== 关闭连接
+可以通过调用 `close` 方法来关闭数据库连接。默认情况下，此方法关闭所有打开的数据库连接。
 
-To close selected connections, pass an array of connection names:
+要关闭指定的连接，请传递一个连接名称的数组：
 
 [source, js]
 ----
