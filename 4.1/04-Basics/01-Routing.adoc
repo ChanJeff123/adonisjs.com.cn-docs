@@ -425,7 +425,6 @@ Route.group(() => {
 === 域名
 
 指定哪个路由组属于哪个域：
-Specify which domain group routes belong to:
 
 .start/routes.js
 [source, js]
