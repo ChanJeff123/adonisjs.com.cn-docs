@@ -150,7 +150,7 @@ foo ({ response }) {
 }
 ----
 
-两个 `route` 助手共享相同的签名，并接受一个可选的参数对象作为第二个参数：
+两个 `route` 助手共享相同的签名，并接收一个可选的参数对象作为第二个参数：
 
 [source, js]
 ----
@@ -159,7 +159,7 @@ Route.get('posts/:id', closure).as('posts.show')
 route('posts.show', { id: 1 })
 ----
 
-`route` 助手还可以接受一个可选的参数对象作为第三个参数，它将处理 `protocol`, `domain` 和 `query` 选项：
+`route` 助手还可以接收一个可选的参数对象作为第三个参数，它将处理 `protocol`, `domain` 和 `query` 选项：
 
 [source, js]
 ----
@@ -189,7 +189,7 @@ route('auth.login', null, {
 
 == 路由格式
 
-路由格式为 link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation[content negotiation, window="_blank"] 开辟了一种新的方式，你可以在其中接受响应格式作为 URL 的一部分。
+路由格式为 link:https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation[content negotiation, window="_blank"] 开辟了一种新的方式，你可以在其中接收响应格式作为 URL 的一部分。
 
 路由格式是客户端和服务器之间为返回哪种类型的响应而签订的协定：
 

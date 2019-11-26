@@ -22,7 +22,7 @@ const Config = use('Config')
 const appSecret = Config.get('app.appSecret')
 ----
 
-使用 `Config.get` 获取配置值，改方法接受以 `fileName.key` 形式引用所需要的key的字符串参数。
+使用 `Config.get` 获取配置值，改方法接收以 `fileName.key` 形式引用所需要的key的字符串参数。
 
 你可以使用点符号获取嵌套的配置值：
 

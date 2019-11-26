@@ -130,25 +130,25 @@ NOTE: 有关 schema 的列类型和修饰符方法的完整列表，请参阅 li
 === 列修饰符
 [options="header", cols="40, 60"]
 |====
-| 方法 | Description
-| `.after(field)` | Set column to be inserted link:https://knexjs.org/#Schema-after[after, window="blank"] `field`.
-| `.alter()` | Marks the column as an link:https://knexjs.org/#Schema-alter[alter/modify, window="blank"].
-| `.collate(collation)` | Set column link:https://knexjs.org/#Chainable[collation, window="blank"] (e.g. `utf8_unicode_ci`).
-| `.comment(value)` | Set column link:https://knexjs.org/#Schema-comment[comment, window="blank"].
-| `.defaultTo(value)` | Set column link:https://knexjs.org/#Schema-defaultTo[default value, window="blank"].
-| `.first()` | Set column to be inserted at the link:https://knexjs.org/#Schema-first[first position, window="blank"].
-| `.index([indexName], [indexType])` | Specifies column as an link:https://knexjs.org/#Chainable[index, window="blank"].
-| `.inTable(table)` | Set link:https://knexjs.org/#Schema-inTable[foreign key table, window="blank"] (chain after `.references`).
-| `.notNullable()` | Set column to link:https://knexjs.org/#Schema-notNullable[not null, window="blank"].
-| `.nullable()` | Set column to be link:https://knexjs.org/#Schema-nullable[nullable, window="blank"].
-| `.primary([constraintName])` | Set column as the link:https://knexjs.org/#Schema-primary[primary key, window="blank"] for a table.
-| `.references(column)` | Set link:https://knexjs.org/#Schema-references[foreign key column, window="blank"].
-| `.unique()` | Set column as link:https://knexjs.org/#Chainable[unique, window="blank"].
-| `.unsigned()` | Set column to link:https://knexjs.org/#Schema-unsigned[unsigned, window="blank"] (if integer).
+| 方法 | 描述
+| `.after(field)` | 设置要在 `field` link:https://knexjs.org/#Schema-after[之后, window="blank"] 插入的列。
+| `.alter()` | 将列标记为 link:https://knexjs.org/#Schema-alter[alter/modify, window="blank"]。
+| `.collate(collation)` | 设置列 link:https://knexjs.org/#Chainable[排序规则, window="blank"]（例如 `utf8_unicode_ci`）。
+| `.comment(value)` | 设置列 link:https://knexjs.org/#Schema-comment[注释, window="blank"]。
+| `.defaultTo(value)` | 设置列 link:https://knexjs.org/#Schema-defaultTo[默认值, window="blank"]。
+| `.first()` | 设置要在 link:https://knexjs.org/#Schema-first[第一个位置, window="blank"] 插入的列。
+| `.index([indexName], [indexType])` | 指定列作为 link:https://knexjs.org/#Chainable[索引, window="blank"]。
+| `.inTable(table)` | 设置 link:https://knexjs.org/#Schema-inTable[外键表, window="blank"]（`.references` 之后的链）。
+| `.notNullable()` | 设置列为 link:https://knexjs.org/#Schema-notNullable[非空, window="blank"]。
+| `.nullable()` | 设置列为 link:https://knexjs.org/#Schema-nullable[空, window="blank"]。
+| `.primary([constraintName])` | 设置列为表的 link:https://knexjs.org/#Schema-primary[主键, window="blank"]。
+| `.references(column)` | 设置 link:https://knexjs.org/#Schema-references[外键列, window="blank"]。
+| `.unique()` | 设置列为唯一 link:https://knexjs.org/#Chainable[unique, window="blank"]。
+| `.unsigned()` | 设置列为 link:https://knexjs.org/#Schema-unsigned[无符号, window="blank"]（如果为整数）。
 |====
 
 == 多个连接
-Schema files can use a different connection by defining a `connection` getter (ensure your different connection exists inside the `config/database.js` file):
+Schema 文件可以通过定义 `connection` getter 来使用不同的连接（确保你的 `config/database.js` 文件中存在不同的连接）：
 
 .database/migrations/...users_schema.js
 [source, js]
@@ -166,10 +166,10 @@ class UsersSchema extends Schema {
 module.exports = UsersSchema
 ----
 
-NOTE: The database table `adonis_schema` is always created inside the default connection database to manage the lifecycle of migrations (there is no option to override it).
+NOTE: 数据库表 `adonis_schema` 始终在默认连接数据库中创建，以管理迁移的生命周期（没有选项可以覆盖它）。
 
 == 运行迁移
-We need to call the `migration:run` command to run migrations (which executes the `up` method on all pending migration files):
+我们需要调用 `migration:run` 命令来运行迁移（在所有挂起的迁移文件上执行 `up` 方法）。
 
 [source, bash]
 ----
@@ -184,7 +184,7 @@ Database migrated successfully in 117 ms
 ----
 
 == 迁移状态
-You can check the status of all migrations by running the following command:
+你可以通过运行以下命令来检查所有迁移的状态：
 
 [source, bash]
 ----
@@ -193,35 +193,34 @@ You can check the status of all migrations by running the following command:
 
 link:http://res.cloudinary.com/adonisjs/image/upload/q_100/v1502694030/migration-status_zajqib.jpg[image:http://res.cloudinary.com/adonisjs/image/upload/q_100/v1502694030/migration-status_zajqib.jpg[], window="_blank"]
 
-TIP: The *batch* value exists as a reference you can use to limit rollbacks at a later time.
+TIP: *批处理* 值作为一个引用存在，你可以在以后使用它来限制回滚。
 
-That is how migrations work under the hood:
+这就是迁移在内部的工作原理：
 
-1. Calling `adonis migration:run` runs all pending schema files and assigns them to a new batch.
-2. Once a batch of migration files are run, they are not run again.
-3. Calling `adonis migration:rollback` rollbacks the last batch of migrations in reverse order.
+1. 调用 `adonis migration:run`，运行所有挂起的 schema 文件，并将它们分配给一个新的批处理。
+2. 一旦运行了一批迁移文件，它们就不会再次运行。
+3. 调用 `adonis migration:rollback` 按相反的顺序回滚最后一批迁移。
 
-TIP: Don't create multiple tables in a single schema file. Instead, create a new file for each database change. This way you keep your database atomic and can roll back to any version.
+TIP: 不要在一个 schema 文件中创建多个表。而是为每个数据库更改创建一个新文件。这样就可以保持数据库的原子性，并可以回滚到任何版本。
 
 == 迁移命令
-Below is the list of available migration commands.
+以下是可用的迁移命令列表。
 
 === 命令列表
 [options="header"]
 |====
-| Command  | Description
-| `make:migration` | Create a new migration file.
-| `migration:run` | Run all pending migrations.
-| `migration:rollback` | Rollback last set of migrations.
-| `migration:refresh` | Rollback all migrations to the `0` batch then re-run them from the start.
-| `migration:reset` | Rollback all migrations to the `0` batch.
-| `migration:status` | Get the status of all the migrations.
+| 命令  | 描述
+| `make:migration` | 创建一个新的迁移文件。
+| `migration:run` | 运行所有挂起的挂起的迁移。
+| `migration:rollback` | 回滚最后一组迁移。
+| `migration:refresh` | 将所有迁移回滚到第 `0` 批处理，然后从头开始重新运行它们。
+| `migration:reset` | 将所有迁移回滚到第 `0` 批处理。
+| `migration:status` | 获取所有迁移的状态。
 |====
 
 
 === 命令帮助
-For detailed command options, append `--help` to a each migration command:
-
+有关详细的命令选项，请在每个迁移命令之后附加 `--help`：
 
 [source, bash]
 ----
@@ -245,10 +244,10 @@ About:
 ----
 
 == Schema 表 API
-Below is the list of schema methods available to interact with database tables.
+以下是可用于与数据库交互的 schema 方法的列表。
 
 ==== create
-Create a new database table:
+创建一个新的数据库表：
 
 [source, js]
 ----
@@ -259,7 +258,7 @@ up () {
 ----
 
 ==== createIfNotExists
-Create a new database table (only if it doesn't exist):
+创建一个新的数据库表（仅当该表不存在时）：
 
 [source, js]
 ----
@@ -270,7 +269,7 @@ up () {
 ----
 
 ==== rename(from, to)
-Rename an existing database table:
+重命名现有数据库表：
 
 [source, js]
 ----
@@ -280,7 +279,7 @@ up () {
 ----
 
 ==== drop
-Drop a database table:
+删除数据库表：
 
 [source, js]
 ----
@@ -290,7 +289,7 @@ down () {
 ----
 
 ==== dropIfExists
-Drop a database table (only if it exists):
+删除数据库表（仅当它存在时）：
 
 [source, js]
 ----
@@ -300,19 +299,19 @@ down () {
 ----
 
 ==== alter
-Select a database table for alteration:
+选择要更改的数据库表：
 
 [source, js]
 ----
 up () {
   this.alter('users', (table) => {
-    // add new columns or remove existing
+    // 添加新列或删除现有列
   })
 }
 ----
 
 ==== raw
-Run an arbitrary SQL query:
+运行一个任意的 SQL 查询：
 
 [source, js]
 ----
@@ -328,7 +327,7 @@ up () {
 ----
 
 ==== hasTable
-Returns whether a table exists or not (this is an `async` method):
+返回表是否存在（这是一个 `异步` 方法）：
 
 [source, js]
 ----
@@ -343,12 +342,12 @@ async up () {
 ----
 
 == 扩展
-Below is the list of extension methods you can execute when running migrations.
+以下是运行迁移时可以执行的扩展方法列表。
 
-NOTE: Extensions only work with a PostgreSQL database.
+NOTE: 扩展仅适用于 PostgreSQL 数据库。
 
 ==== createExtension(extensionName)
-Create a database extension:
+创建数据库扩展：
 
 [source, javascript]
 ----
@@ -360,7 +359,7 @@ class UserSchema {
 ----
 
 ==== createExtensionIfNotExists(extensionName)
-Create a database extension (only if doesn't exist):
+创建数据库扩展(仅当不存在时)：
 
 [source, javascript]
 ----
@@ -372,7 +371,7 @@ class UserSchema {
 ----
 
 ==== dropExtension(extensioName)
-Drop a database extension:
+删除数据库扩展：
 
 [source, javascript]
 ----
@@ -384,7 +383,7 @@ class UserSchema {
 ----
 
 ==== dropExtensionIfExists(extensionName)
-Drop a database extension (only if it exists):
+删除数据库扩展(仅当存在时)：
 
 [source, javascript]
 ----
@@ -396,40 +395,39 @@ class UserSchema {
 ----
 
 == 执行任意代码
-Commands written inside the `up` and `down` methods are scheduled to be executed later inside a migration.
+在 `up` 和 `down` 方法中编写的命令计划在稍后的迁移中执行。
 
-If you need to execute *arbitrary* database commands, wrap them inside the `schedule` function:
-
+如果你需要执行 *任意* 数据库命令，请将它们包装在 `schedule` 函数中：
 
 [source, javascript]
 ----
 class UserSchema {
   up () {
-    // create new table
+    // 创建新表
     this.create('new_users', (table) => {
     })
 
-    // copy data
+    // 拷贝数据
     this.schedule(async (trx) => {
       const users = await Database.table('users').transacting(trx)
       await Database.table('new_users').transacting(trx).insert(users)
     })
 
-    // drop old table
+    // 删除旧表
     this.drop('users')
   }
 }
 ----
 
-NOTE: The `schedule` method receives a *transaction object*. It is important to run all database commands inside the same transaction, otherwise your queries will hang forever.
+NOTE: `schedule` 接收一个 *事务对象*。在同一事务中运行所有数据库命令很重要，否则你的查询将永久挂起。
 
 == Schema 构造器 API
-The schema builder API uses the link:http://knexjs.org/#Schema-Building[Knex API, window="_blank"], so make sure to read their documentation for more information.
+schema 构造器 API 使用的是 link:http://knexjs.org/#Schema-Building[Knex API, window="_blank"]，因此请务必阅读其文档以获取更多信息。
 
 ==== fn.now()
-Knex has a method called link:http://knexjs.org/#Schema-timestamp[knex.fn.now(), window="_blank"], which is used to set the current timestamp on the database field.
+Knex 有一个名为 link:http://knexjs.org/#Schema-timestamp[knex.fn.now(), window="_blank"] 的方法，该方法用于在数据库字段上设置当前时间戳。
 
-In AdonisJs, you reference this method as `this.fn.now()`:
+在 AdonisJs 中，你可以用 `this.fn.now()` 引用此方法：
 
 [source, js]
 ----

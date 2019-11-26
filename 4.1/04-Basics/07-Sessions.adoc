@@ -87,7 +87,7 @@ session.put('username', 'virk')
 ----
 
 ==== get(key, [defaultValue])
-返回给定键的值(接受可选的默认值)：
+返回给定键的值(接收可选的默认值)：
 
 [source, js]
 ----
